@@ -23,6 +23,8 @@
 #ifndef DRIVER_EURODRIFT_MAPEDITING_H
 #define DRIVER_EURODRIFT_MAPEDITING_H
 
+#include "../include/mathObjects.h"
+
 typedef struct {
 
     int fuelAvailable;
@@ -31,6 +33,8 @@ typedef struct {
 
 }MapStructure;
 
+
+void allocateMapGrid (MapStructure* map);
 
 void readMapFromStdin(MapStructure* map);
 
@@ -41,15 +45,15 @@ MapStructure copyMap(MapStructure map);
 void freeMap(MapStructure* map);
 
 
-int isInGrid (MapStructure map, int x, int y);
+int isInGrid (MapStructure map, Vector2D position);
 
-char readMapTile(MapStructure map, int x, int y);
+char readMapTile(MapStructure map, Vector2D position);
 
-void writeMapTile(MapStructure* map, int x, int y, char characterToWrite);
+void writeMapTile(MapStructure* map, Vector2D position, char characterToWrite);
 
 
-void regenMapTile(MapStructure originalMap, MapStructure* editedMap, int x, int y);
+void regenMapTile(MapStructure originalMap, MapStructure* editedMap, Vector2D position);
 
-int isArrival(MapStructure map, int x, int y);
+int isArrival(MapStructure map, Vector2D position);
 
 #endif

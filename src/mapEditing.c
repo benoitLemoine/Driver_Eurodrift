@@ -20,9 +20,31 @@
  */
 
 #include "../include/mapEditing.h"
+#include "../include/mathObjects.h"
 #include <stdio.h>
 #include <stdlib.h>
 
+
+void allocateMapGrid (MapStructure* map) {
+
+    int i;
+
+
+    if (map->height <= 0 || map->width <= 0) {
+        fprintf(stderr, "Map of wrong dimensions\n");
+        map->grid = NULL;
+        return;
+    }
+
+    map->grid = (char**)calloc((size_t)map->width, sizeof(char*));
+    for (i = 0; i < map->width; i++) {
+        map->grid[i] = (char*)calloc((size_t)map->height, sizeof(char));
+    }
+
+    if (map->grid == NULL) {
+        fprintf(stderr, "Memory for the map cannot be allocated\n");
+    }
+}
 
 void readMapFromStdin(MapStructure* map) {
 
@@ -32,17 +54,7 @@ void readMapFromStdin(MapStructure* map) {
     fscanf(stdin, "%d %d %d", &map->width, &map->height, &map->fuelAvailable);
     while (fread(&charBuffer, sizeof(char), 1, stdin) == 1 && charBuffer != '\n') {}
 
-
-    map->grid = (char**)calloc((size_t)map->width, sizeof(char*));
-    for (i = 0; i < map->width; i++) {
-        map->grid[i] = (char*)calloc((size_t)map->height, sizeof(char));
-    }
-
-    if (map->grid == NULL) {
-        fprintf(stderr, "Memory for the map cannot be allocated");
-        return;
-    }
-
+    allocateMapGrid(map);
 
     for (j = 0; j < map->height; j++) {
         i = 0;
@@ -61,7 +73,7 @@ void saveMapAsFile(MapStructure map, char* filename) {
 
     mapFile = fopen(filename, "w");
     if (mapFile == NULL) {
-        fprintf(stderr, "Cannot open file %s", filename);
+        fprintf(stderr, "Cannot open file %s\n", filename);
         return;
     }
 
@@ -87,10 +99,7 @@ MapStructure copyMap(MapStructure map) {
     copiedMap.height = map.height;
     copiedMap.fuelAvailable = map.fuelAvailable;
 
-    copiedMap.grid = (char**)calloc((size_t)map.width, sizeof(char*));
-    for (i = 0; i < map.width; i++) {
-        copiedMap.grid[i] = (char*)calloc((size_t)map.height, sizeof(char));
-    }
+    allocateMapGrid(&copiedMap);
 
     for (i = 0; i < map.width; i++) {
         for (j = 0; j < map.height; j++) {
@@ -113,13 +122,13 @@ void freeMap(MapStructure* map) {
 }
 
 
-int isInGrid(MapStructure map, int x, int y) {
+int isInGrid(MapStructure map, Vector2D position) {
 
-    if (x > map.width || x < 0) {
+    if (position.x > map.width || position.x < 0) {
         return 0;
     }
 
-    if ( y > map.height || y < 0) {
+    if ( position.y > map.height || position.y < 0) {
         return 0;
     }
 
@@ -127,43 +136,43 @@ int isInGrid(MapStructure map, int x, int y) {
 }
 
 
-char readMapTile(MapStructure map, int x, int y) {
+char readMapTile(MapStructure map, Vector2D position) {
 
-    if (isInGrid(map, x, y)) {
+    if (!isInGrid(map, position)) {
         return '.';
     }
 
-    return map.grid[x][y];
+    return map.grid[position.x][position.y];
 }
 
 
-void writeMapTile(MapStructure* map, int x, int y, char characterToWrite) {
+void writeMapTile(MapStructure* map, Vector2D position, char characterToWrite) {
 
-    if (isInGrid(*map, x, y)) {
+    if (!isInGrid(*map, position)) {
         return;
     }
 
-    map->grid[x][y] = characterToWrite;
+    map->grid[position.x][position.y] = characterToWrite;
 }
 
 
-void regenMapTile(MapStructure originalMap, MapStructure* editedMap, int x, int y) {
+void regenMapTile(MapStructure originalMap, MapStructure* editedMap, Vector2D position) {
 
-    if (isInGrid(originalMap, x, y)) {
+    if (!isInGrid(originalMap, position)) {
         return;
     }
 
-    editedMap->grid[x][y] = originalMap.grid[x][y];
+    editedMap->grid[position.x][position.y] = originalMap.grid[position.x][position.y];
 }
 
 
-int isArrival(MapStructure map, int x, int y) {
+int isArrival(MapStructure map, Vector2D position) {
 
-    if (isInGrid(map, x, y)) {
+    if (!isInGrid(map, position)) {
         return 0;
     }
 
-    if (map.grid[x][y] == '=') {
+    if (map.grid[position.x][position.y] == '=') {
         return 1;
     }
 
