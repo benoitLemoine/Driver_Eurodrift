@@ -82,7 +82,7 @@ void copyMap_TestOnSmallMap() {
     for (i = 0; i < map.width; i++) {
         map.grid[i] = (char*)calloc((size_t)map.height, sizeof(char));
         for (j = 0; j < map.height; j++) {
-            map.grid[i][j] = rand();
+            map.grid[i][j] = (char)rand();
         }
     }
 
@@ -300,7 +300,79 @@ void isArrival_Test() {
         return;
     }
 
-    printf("""- isArrival_Test succeeded !\n");
+    printf("- isArrival_Test succeeded !\n");
+    freeMap(&map);
+}
+
+void isCrossable_Test() {
+
+    int i;
+    MapStructure map;
+    Vector2D departure, arrival;
+
+
+    map.height = 1;
+    map.width = 3;
+
+    map.grid = (char**)calloc((size_t)map.width, sizeof(char*));
+    for (i = 0; i < map.width; i++) {
+        map.grid[i] = (char*)calloc((size_t)map.height, sizeof(char));
+    }
+
+    departure.x = 0;
+    departure.y = 0;
+    arrival.x = 2;
+    arrival.y = 0;
+
+
+    map.grid[0][0] = '#';
+    map.grid[1][0] = '#';
+    map.grid[2][0] = '#';
+
+    if(isCrossable(map, departure, arrival) != 1) {
+        printf("Warning : isCrossable_Test failed !\n");
+        printf("Segment was crossable !");
+        freeMap(&map);
+        return;
+    }
+
+
+    map.grid[0][0] = '#';
+    map.grid[1][0] = '.';
+    map.grid[2][0] = '#';
+
+    if(isCrossable(map, departure, arrival) != 0) {
+        printf("Warning : isCrossable_Test failed !\n");
+        printf("Segment wasn't crossable !");
+        freeMap(&map);
+        return;
+    }
+
+
+    map.grid[0][0] = '.';
+    map.grid[1][0] = '#';
+    map.grid[2][0] = '#';
+
+    if(isCrossable(map, departure, arrival) != 0) {
+        printf("Warning : isCrossable_Test failed !\n");
+        printf("Departure wasn't drivable !");
+        freeMap(&map);
+        return;
+    }
+
+    map.grid[0][0] = '#';
+    map.grid[1][0] = '#';
+    map.grid[2][0] = '.';
+
+    if(isCrossable(map, departure, arrival) != 0) {
+        printf("Warning : isCrossable_Test failed !\n");
+        printf("Arrival wasn't drivable !");
+        freeMap(&map);
+        return;
+    }
+
+    printf("- isCrossable_Test succeeded !\n");
+    freeMap(&map);
 }
 
 int main() {
@@ -312,6 +384,7 @@ int main() {
     writeMapTile_Test();
     regenMapTile_Test();
     isArrival_Test();
+    isCrossable_Test();
 
     return 0;
 }

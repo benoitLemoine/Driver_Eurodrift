@@ -21,6 +21,7 @@
 
 #include "../include/mapEditing.h"
 #include "../include/mathObjects.h"
+#include "../include/gpcontrol.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,7 +29,6 @@
 void allocateMapGrid (MapStructure* map) {
 
     int i;
-
 
     if (map->height <= 0 || map->width <= 0) {
         fprintf(stderr, "Map of wrong dimensions\n");
@@ -177,4 +177,102 @@ int isArrival(MapStructure map, Vector2D position) {
     }
 
     return 0;
+}
+
+
+int isDrivable(MapStructure map, Vector2D position) {
+
+    if (!isInGrid(map, position)) {
+        return 0;
+    }
+
+    if (map.grid[position.x][position.y] == '#') {
+        return 1;
+    }
+
+    if (map.grid[position.x][position.y] == '~') {
+        return 1;
+    }
+
+    return 0;
+}
+
+
+void line(int x1, int y1, int x2, int y2, infoLine *data) {
+    data->posStart.x = x1;
+    data->posStart.y = y1;
+    data->posActual.x = x1 + 0.5;
+    data->posActual.y = y1 + 0.5;
+    data->posEnd.x = x2;
+    data->posEnd.y = y2;
+    int adxi, adyi, dxi, dyi;
+    adxi = dxi = x2 - x1;
+    adyi = dyi = y2 - y1;
+    if (adxi < 0)
+        adxi = -dxi;
+    if (adyi < 0)
+        adyi = -dyi;
+    data->pos = 0;
+    data->len = adxi;
+    if (adyi > adxi)
+        data->len = adyi;
+    data->delta.x = ((float)dxi) / data->len;
+    data->delta.y = ((float)dyi) / data->len;
+}
+
+
+int nextPoint(infoLine *data, pos2Dint *point, int sens) {
+    if (sens > 0) {
+        if (data->pos == data->len) {
+            point->x = data->posEnd.x;
+            point->y = data->posEnd.y;
+            return -1; // La fin de la ligne est atteinte
+        }
+        data->posActual.x += data->delta.x;
+        data->posActual.y += data->delta.y;
+        point->x = ((int)data->posActual.x);
+        point->y = ((int)data->posActual.y);
+        data->pos++;
+        return 1; // un nouveau point est déterminé.
+    }
+    if (sens < 0) {
+        if (data->pos == 0) {
+            point->x = data->posStart.x;
+            point->y = data->posStart.y;
+            return -1; // La fin de la ligne est atteinte
+        }
+        data->posActual.x -= data->delta.x;
+        data->posActual.y -= data->delta.y;
+        point->x = ((int)data->posActual.x);
+        point->y = ((int)data->posActual.y);
+        data->pos--;
+
+        return 1; // un nouveau point est déterminé.
+    }
+    return 1; // Avec sens==0, il n'y a pas de déplacement
+}
+
+
+int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival) {
+
+    infoLine lineStructure;
+    pos2Dint computedPosition;
+    Vector2D positionBuffer;
+
+    if (!isDrivable(map, departure) || ! isDrivable(map, arrival)) {
+        return 0;
+    }
+
+    line(departure.x, departure.y,arrival.x, arrival.y, &lineStructure);
+
+    while (nextPoint(&lineStructure, &computedPosition, 1) == 1) {
+      positionBuffer.x = computedPosition.x;
+      positionBuffer.y = computedPosition.y;
+
+      if (!isDrivable(map, positionBuffer)) {
+          return 0;
+      }
+    }
+
+    return 1;
 }
