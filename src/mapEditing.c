@@ -65,6 +65,33 @@ void readMapFromStdin(MapStructure* map) {
     }
 }
 
+void readMapFromFile(MapStructure* map, char *filename) {
+
+    int i, j;
+    char charBuffer;
+    FILE *filepointer;
+
+    filepointer = fopen(filename, "r");
+
+    if(filepointer == NULL) {
+        fprintf(stderr, "Can't open the specified file.\n");
+        return;
+    }
+
+    fscanf(filepointer, "%d %d %d", &map->width, &map->height, &map->fuelAvailable);
+    while (fread(&charBuffer, sizeof(char), 1, filepointer) == 1 && charBuffer != '\n') {}
+
+    allocateMapGrid(map);
+
+    for (j = 0; j < map->height; j++) {
+        i = 0;
+        while (fread(&charBuffer, sizeof(char), 1, filepointer) == 1 && charBuffer != '\n') {
+            map->grid[i][j] = charBuffer;
+            i++;
+        }
+    }
+    fclose(filepointer);
+}
 
 void saveMapAsFile(MapStructure map, char* filename) {
 
