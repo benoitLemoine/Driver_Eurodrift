@@ -1,0 +1,118 @@
+/**
+ * ENSICAEN
+ * 6 Boulevard Marechal Juin
+ * F-14050 Caen Cedex
+ *
+ * This file is owned by ENSICAEN students.
+ * No portion of this document may be reproduced, copied
+ * or revised without written permission of the authors.
+*/
+
+
+/**
+ * @author Leplanquois Maxime <maxime.leplanquois@ecole.ensicaen.fr>
+ * @version 0.0.1 / 30-04-2018
+ */
+
+
+/**
+ * @file tileQueue.c
+ */
+
+#include "../include/tileQueue.h"
+#include <stdio.h>
+
+TileQueue *initTileQueue() {
+    TileQueue *queue;
+
+    queue = malloc(sizeof(TileQueue));
+
+    queue->head = NULL;
+    queue->tail = NULL;
+    return queue;
+}
+
+void freeTileQueue(TileQueue *queue) {
+    Tile *t;
+
+    t = malloc(sizeof(TileQueueNode));
+    while (!isEmptyTileQueue(queue)) {
+        dequeueTileQueue(queue,t);
+    }
+    free(t);
+    free(queue);
+}
+
+int isEmptyTileQueue(TileQueue *queue) {
+    if (queue->head == NULL) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+void enqueueTileQueue(TileQueue *queue, Tile t) {
+    TileQueueNode *node;
+
+    TileQueueNode *cur;
+
+    node = malloc(sizeof(TileQueueNode));
+    node->value = t;
+    node->prev = NULL;
+    node->next = NULL;
+
+    if (isEmptyTileQueue(queue)) {
+        queue->head = node;
+        queue->tail = node;
+    }
+    else {
+        cur = queue->tail;
+        while(cur->value.cost >= node->value.cost && cur->prev != NULL) {
+            cur = cur->prev;
+        }
+        if(cur->value.cost < node->value.cost) {
+            if (cur->next == NULL) {
+                queue->tail = node;
+            }
+            else {
+                cur->next->prev = node;
+            }
+            node->next = cur->next;
+            node->prev = cur;
+            cur->next = node;
+        }
+        else {
+            queue->head = node;
+            node->next = cur;
+            cur->prev = node;
+        }
+    }
+
+}
+
+int dequeueTileQueue(TileQueue *queue, Tile *t) {
+    TileQueueNode *tmp;
+
+    if (isEmptyTileQueue(queue)) {
+        t->speedX = -1;
+        t->speedY = -1;
+        t->position.x = -1;
+        t->position.y = -1;
+        t->cost = -1;
+        return 0;
+    }
+    else {
+        *t = queue->head->value;
+        tmp = queue->head;
+        queue->head = queue->head->next;
+        if (queue->head == NULL) {
+            queue->tail = NULL;
+        }
+        else {
+            queue->head->prev = NULL;
+        }
+        free(tmp);
+        return 1;
+    }
+}

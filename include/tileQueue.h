@@ -1,0 +1,58 @@
+/**
+ * ENSICAEN
+ * 6 Boulevard Marechal Juin
+ * F-14050 Caen Cedex
+ *
+ * This file is owned by ENSICAEN students.
+ * No portion of this document may be reproduced, copied
+ * or revised without written permission of the authors.
+*/
+
+
+/**
+ * @author Leplanquois Maxime <maxime.leplanquois@ecole.ensicaen.fr>
+ * @version 0.0.1 / 30-04-2018
+ */
+
+
+/**
+ * @file tileQueue.h
+ */
+
+#ifndef DRIVER_EURODRIFT_TILEQUEUE_H
+#define DRIVER_EURODRIFT_TILEQUEUE_H
+
+#include "graphEditing.h"
+#include <stdlib.h>
+
+typedef struct {
+    int cost;
+    int speedX;
+    int speedY;
+    Vector2D position;
+} Tile;
+
+typedef struct TileQueueNode TileQueueNode;
+
+struct TileQueueNode{
+    Tile value;
+    TileQueueNode *prev;
+    TileQueueNode *next;
+};
+
+typedef struct {
+    TileQueueNode *head;
+    TileQueueNode *tail;
+} TileQueue;
+
+TileQueue *initTileQueue();
+
+int isEmptyTileQueue(TileQueue *queue);
+
+void enqueueTileQueue(TileQueue *queue, Tile t);
+
+int dequeueTileQueue(TileQueue *queue, Tile *t);
+
+void freeTileQueue(TileQueue *queue);
+
+#endif //DRIVER_EURODRIFT_TILEQUEUE_H

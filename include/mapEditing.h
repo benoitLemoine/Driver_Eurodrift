@@ -56,6 +56,10 @@ void regenMapTile(MapStructure originalMap, MapStructure* editedMap, Vector2D po
 
 int isArrival(MapStructure map, Vector2D position);
 
+int isDrivable(MapStructure map, Vector2D position);
+
+int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival);
+
 
 void readMapFromFile(MapStructure* map, char *filename);
 

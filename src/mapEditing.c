@@ -286,7 +286,7 @@ int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival) {
     pos2Dint computedPosition;
     Vector2D positionBuffer;
 
-    if (!isDrivable(map, departure) || ! isDrivable(map, arrival)) {
+    if (!isDrivable(map, departure) || !isDrivable(map, arrival)) {
         return 0;
     }
 

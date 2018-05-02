@@ -29,6 +29,7 @@ typedef struct {
     Vector2D position;
     int cost;
     char type;
+    int visited;
 
 }MapTile;
 
@@ -39,19 +40,16 @@ typedef struct {
 
 }MapGraph;
 
-typedef struct {
-    MapTile **pathTile;
-    int totalCost;
-}Path;
-
-typedef struct {
-    Path **pathlist;
-}PathList;
-
 MapGraph *allocateMapGraph(MapStructure *map);
 
 void displayGraph(MapGraph *graph);
 
+void displayGraphCost(MapGraph *graph);
+
 void freeGraph(MapGraph *graph);
+
+int computeCost(int ddx, int ddy, int dx, int dy, int inSand);
+
+void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition);
 
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H
