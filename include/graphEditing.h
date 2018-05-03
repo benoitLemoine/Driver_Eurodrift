@@ -22,6 +22,8 @@
 #ifndef DRIVER_EURODRIFT_GRAPHEDITING_H
 #define DRIVER_EURODRIFT_GRAPHEDITING_H
 
+#include "mathObjects.h"
+#include "tileQueue.h"
 #include "mapEditing.h"
 
 typedef struct {
@@ -37,6 +39,8 @@ typedef struct {
 
     MapTile **nodes;
     int height, width;
+    int arrivalTileNumber;
+    Vector2D *arrivalTiles;
 
 }MapGraph;
 
@@ -51,5 +55,7 @@ void freeGraph(MapGraph *graph);
 int computeCost(int ddx, int ddy, int dx, int dy, int inSand);
 
 void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition);
+
+TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition);
 
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H

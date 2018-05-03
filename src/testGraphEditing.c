@@ -258,9 +258,35 @@ MU_TEST(testDijkstra) {
 
 }
 
+MU_TEST(testbestPath) {
+
+    MapGraph *graph;
+    MapStructure map;
+
+    Vector2D v;
+    TileQueue *path;
+
+    v.x = 43;
+    v.y = 3;
+
+    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_virage_sable.txt");
+
+    graph = allocateMapGraph(&map);
+
+    dijkstraAlgorithm(map, graph, v);
+    path = buildBestPath(graph, v);
+
+    displayGraphCost(graph);
+    displayTileQueue(path);
+    freeGraph(graph);
+    freeMap(&map);
+
+}
+
 MU_TEST_SUITE(suiteTestMapGraph){
     MU_RUN_TEST(assertAllocateMapGraph);
     MU_RUN_TEST(testDijkstra);
+    MU_RUN_TEST(testbestPath);
 }
 
 int main(int argc, char *argv[]) {

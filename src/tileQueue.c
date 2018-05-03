@@ -116,3 +116,43 @@ int dequeueTileQueue(TileQueue *queue, Tile *t) {
         return 1;
     }
 }
+
+void updateSpeedTileQueue(TileQueue *queue) {
+
+    TileQueueNode *cur;
+
+    if (isEmptyTileQueue(queue)) {
+        return;
+    }
+    else if(queue->head == queue->tail) {
+        return;
+    }
+    else {
+        cur = queue->head;
+
+        while(cur != queue->tail) {
+            cur->value.speedX = cur->next->value.position.x - cur->value.position.x;
+            cur->value.speedY = cur->next->value.position.y - cur->value.position.y;
+            cur = cur->next;
+        }
+    }
+}
+
+void displayTileQueue(TileQueue *queue) {
+
+    TileQueueNode *cur;
+
+    if (isEmptyTileQueue(queue)) {
+        printf("TileQueue empty.\n");
+    } else {
+        cur = queue->head;
+
+        while (cur != queue->tail) {
+            printf("-> [%3d][%3d]: Vx %3d Vy %3d : %3d\n", cur->value.position.x, cur->value.position.y, cur->value.speedX,
+                   cur->value.speedY, cur->value.cost);
+            cur = cur->next;
+        }
+        printf("-> [%3d][%3d]: Vx %3d Vy %3d : %3d\n", cur->value.position.x, cur->value.position.y, cur->value.speedX,
+               cur->value.speedY, cur->value.cost);
+    }
+}

@@ -22,7 +22,7 @@
 #ifndef DRIVER_EURODRIFT_TILEQUEUE_H
 #define DRIVER_EURODRIFT_TILEQUEUE_H
 
-#include "graphEditing.h"
+#include "mathObjects.h"
 #include <stdlib.h>
 
 typedef struct {
@@ -52,6 +52,10 @@ int isEmptyTileQueue(TileQueue *queue);
 void enqueueTileQueue(TileQueue *queue, Tile t);
 
 int dequeueTileQueue(TileQueue *queue, Tile *t);
+
+void displayTileQueue(TileQueue *queue);
+
+void updateSpeedTileQueue(TileQueue *queue);
 
 void freeTileQueue(TileQueue *queue);
 
