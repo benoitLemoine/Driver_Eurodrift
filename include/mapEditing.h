@@ -56,4 +56,7 @@ void regenMapTile(MapStructure originalMap, MapStructure* editedMap, Vector2D po
 
 int isArrival(MapStructure map, Vector2D position);
 
+
+void readMapFromFile(MapStructure* map, char *filename);
+
 #endif
