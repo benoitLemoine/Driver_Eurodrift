@@ -221,6 +221,11 @@ int isDrivable(MapStructure map, Vector2D position) {
         return 1;
     }
 
+    if (map.grid[position.x][position.y] == '=') {
+        return 1;
+    }
+
+
     return 0;
 }
 
