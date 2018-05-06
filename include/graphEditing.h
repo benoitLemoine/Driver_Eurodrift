@@ -58,4 +58,8 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
 
 TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition);
 
+void correctPath(MapGraph *graph, TileQueue *path);
+
+void resetVisited(MapGraph *graph);
+
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H

@@ -49,11 +49,15 @@ TileQueue *initTileQueue();
 
 int isEmptyTileQueue(TileQueue *queue);
 
+void enqueueByCostTileQueue(TileQueue *queue, Tile t);
+
 void enqueueTileQueue(TileQueue *queue, Tile t);
 
 int dequeueTileQueue(TileQueue *queue, Tile *t);
 
 void displayTileQueue(TileQueue *queue);
+
+void removeDuplicate(TileQueue *queue, Vector2D position);
 
 void updateSpeedTileQueue(TileQueue *queue);
 

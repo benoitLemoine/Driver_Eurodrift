@@ -266,15 +266,16 @@ MU_TEST(testbestPath) {
     Vector2D v;
     TileQueue *path;
 
-    v.x = 43;
-    v.y = 3;
+    v.x = 87;
+    v.y = 0;
 
-    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_virage_sable.txt");
+    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/f-Zero_Death_Wind.txt");
 
     graph = allocateMapGraph(&map);
 
     dijkstraAlgorithm(map, graph, v);
     path = buildBestPath(graph, v);
+    correctPath(graph, path);
 
     displayGraphCost(graph);
     displayTileQueue(path);
@@ -285,7 +286,7 @@ MU_TEST(testbestPath) {
 
 MU_TEST_SUITE(suiteTestMapGraph){
     MU_RUN_TEST(assertAllocateMapGraph);
-    MU_RUN_TEST(testDijkstra);
+    //MU_RUN_TEST(testDijkstra);
     MU_RUN_TEST(testbestPath);
 }
 

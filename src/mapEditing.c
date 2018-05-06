@@ -151,11 +151,11 @@ void freeMap(MapStructure* map) {
 
 int isInGrid(MapStructure map, Vector2D position) {
 
-    if (position.x > map.width || position.x < 0) {
+    if (position.x >= map.width || position.x < 0) {
         return 0;
     }
 
-    if ( position.y > map.height || position.y < 0) {
+    if ( position.y >= map.height || position.y < 0) {
         return 0;
     }
 
@@ -213,11 +213,19 @@ int isDrivable(MapStructure map, Vector2D position) {
         return 0;
     }
 
-    if (map.grid[position.x][position.y] == '.') {
-        return 0;
+    if (map.grid[position.x][position.y] == '#') {
+        return 1;
     }
 
-    return 1;
+    if (map.grid[position.x][position.y] == '~') {
+        return 1;
+    }
+
+    if (map.grid[position.x][position.y] == '=') {
+        return 1;
+    }
+
+    return 0;
 }
 
 

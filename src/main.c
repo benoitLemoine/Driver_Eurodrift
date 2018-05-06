@@ -69,6 +69,7 @@ int main() {
             computedGraph = 1;
             dijkstraAlgorithm(map, graph, ourPosition);
             path = buildBestPath(graph, ourPosition);
+            correctPath(graph, path);
         }
 
         dequeueTileQueue(path, &t);

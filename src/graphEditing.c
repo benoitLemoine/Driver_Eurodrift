@@ -60,10 +60,10 @@ MapGraph *allocateMapGraph(MapStructure *map) {
                 } else {
                     graph->nodes[i][j].cost = INT_MAX;
                 }
-                if(isArrival(*map, coordinates)) {
+                if (isArrival(*map, coordinates)) {
                     arrivalTileNumber++;
                     graph->arrivalTiles = realloc(graph->arrivalTiles, sizeof(Vector2D) * arrivalTileNumber);
-                    graph->arrivalTiles[arrivalTileNumber-1] = coordinates;
+                    graph->arrivalTiles[arrivalTileNumber - 1] = coordinates;
                 }
             }
         }
@@ -72,6 +72,17 @@ MapGraph *allocateMapGraph(MapStructure *map) {
 
     }
     return graph;
+}
+
+void resetVisited(MapGraph *graph) {
+
+    int i, j;
+
+    for (i = 0; i < graph->width; i++) {
+        for (j = 0; j < graph->height; j++) {
+            graph->nodes[i][j].visited = 0;
+        }
+    }
 }
 
 void displayGraph(MapGraph *graph) {
@@ -113,6 +124,8 @@ void freeGraph(MapGraph *graph) {
 void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition) {
 
     //TODO Refaire quand le meilleur chemin est le sable -> norme de vitesse <= 1
+    //TODO Visited des voisins à changer
+    //TODO Ajout de plusieurs fois la même case quand on fait les voisins
 
     int i, j;
     int dvx, dvy, vx, vy;
@@ -120,32 +133,36 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
     int crossable;
     int computedCost;
 
+    int impossibleVelocity;
+
     TileQueue *neighbors = initTileQueue();
     Tile t;
 
-    MapTile current = graph->nodes[playerPosition.x][playerPosition.y];
+    MapTile *current = &(graph->nodes[playerPosition.x][playerPosition.y]);
     Vector2D testedNeighbor;
 
     vx = 0;
     vy = 0;
     dvx = 0;
     dvy = 0;
-    current.cost = 0;
-    graph->nodes[playerPosition.x][playerPosition.y].cost = 0;
-    current.visited = 1;
+    current->cost = 0;
+    current->visited = 0;
 
-    t.cost = current.cost;
+    t.cost = current->cost;
     t.speedX = vx;
     t.speedY = vy;
     t.position = playerPosition;
 
-    enqueueTileQueue(neighbors, t);
+    enqueueByCostTileQueue(neighbors, t);
 
     while (!isEmptyTileQueue(neighbors) && !isArrival(map, t.position)) {
 
         dequeueTileQueue(neighbors, &t);
-        current = graph->nodes[t.position.x][t.position.y];
-        current.visited = 1;
+
+        current = &(graph->nodes[t.position.x][t.position.y]);
+        current->visited = 1;
+
+        //Current speed
         vx = t.speedX;
         vy = t.speedY;
 
@@ -153,39 +170,57 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
             for (j = -1; j <= 1; j++) {
 
                 inSand = 0;
-                testedNeighbor.x = current.position.x + i;
-                testedNeighbor.y = current.position.y + j;
+                impossibleVelocity = 0;
 
-                if(current.position.x == playerPosition.x && current.position.y == playerPosition.y) {
+                testedNeighbor.x = current->position.x + i;
+                testedNeighbor.y = current->position.y + j;
+
+                if (current->position.x == playerPosition.x && current->position.y == playerPosition.y) {
                     crossable = 1;
+                } else {
+                    crossable = isCrossable(map, current->position, testedNeighbor);
                 }
-                else {
-                    crossable = isCrossable(map, current.position, testedNeighbor);
-                }
 
-                if (isInGrid(map, testedNeighbor) && crossable && isDrivable(map, testedNeighbor) &&
-                    graph->nodes[testedNeighbor.x][testedNeighbor.y].visited == 0) {
+                if (isInGrid(map, testedNeighbor)) {
+                    if (crossable && isDrivable(map, testedNeighbor) &&
+                        graph->nodes[testedNeighbor.x][testedNeighbor.y].visited == 0) {
 
-                    graph->nodes[testedNeighbor.x][testedNeighbor.y].visited = 1;
-                    dvx = i - vx;
-                    dvy = j - vy;
+                        if (current->type == '~') {
 
-                    if (current.type == '~') {
+                            inSand = 1;
 
-                        inSand = 1;
+                        }
 
+                        if (!inSand || (inSand && (i == 0 || j == 0))) {
+
+                            //Velocity required to reach the new tile
+                            dvx = i - vx;
+                            dvy = j - vy;
+
+                            if (dvx >= 2 || dvx <= -2) {
+                                impossibleVelocity = 1;
+                            }
+
+                            if (dvy >= 2 || dvy <= -2) {
+                                impossibleVelocity = 1;
+                            }
+
+                            computedCost = current->cost + computeCost(dvx, dvy, vx, vy, inSand);
+
+                            if (computedCost < graph->nodes[testedNeighbor.x][testedNeighbor.y].cost &&
+                                !impossibleVelocity) {
+
+                                graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
+
+                                t.position = testedNeighbor;
+                                t.cost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
+                                t.speedX = dvx + vx;
+                                t.speedY = dvy + vy;
+                                enqueueByCostTileQueue(neighbors, t);
+                                removeDuplicate(neighbors, t.position);
+                            }
+                        }
                     }
-
-                    computedCost = current.cost + computeCost(dvx, dvy, vx, vy, inSand);
-                    if(computedCost < graph->nodes[testedNeighbor.x][testedNeighbor.y].cost) {
-                        graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
-                    }
-
-                    t.position = testedNeighbor;
-                    t.cost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
-                    t.speedX = dvx;
-                    t.speedY = dvy;
-                    enqueueTileQueue(neighbors, t);
                 }
             }
         }
@@ -195,8 +230,16 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
 
 TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
 
+    //TODO Deux queues : queue périodique et queue sûre
+    //Arrêt quand case ajoutée = playerPosition
+    //Testez les cases en changeant les visited à 0
+
+
     int i, j;
     int minCost;
+    int inSand;
+    int inSandArrival;
+
     Vector2D finish;
     Vector2D testedNeighbor;
 
@@ -204,16 +247,22 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
     Tile t;
 
     minCost = INT_MAX;
-    for(i = 0; i < graph->arrivalTileNumber; i++) {
-        if(minCost >= graph->nodes[graph->arrivalTiles[i].x][graph->arrivalTiles[i].y].cost) {
+    for (i = 0; i < graph->arrivalTileNumber; i++) {
+        if (minCost >= graph->nodes[graph->arrivalTiles[i].x][graph->arrivalTiles[i].y].cost) {
             minCost = graph->nodes[graph->arrivalTiles[i].x][graph->arrivalTiles[i].y].cost;
             finish = graph->arrivalTiles[i];
         }
     }
 
-    while(finish.x != playerPosition.x || finish.y != playerPosition.y) {
+    while (finish.x != playerPosition.x || finish.y != playerPosition.y) {
         t.position = finish;
         t.cost = graph->nodes[finish.x][finish.y].cost;
+
+        inSand = 0;
+
+        if (graph->nodes[finish.x][finish.y].type == '~') {
+            inSand = 1;
+        }
 
         minCost = INT_MAX;
         for (i = -1; i <= 1; i++) {
@@ -222,10 +271,20 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                 testedNeighbor.x = t.position.x + i;
                 testedNeighbor.y = t.position.y + j;
 
-                if (minCost >= graph->nodes[testedNeighbor.x][testedNeighbor.y].cost
-                    && graph->nodes[testedNeighbor.x][testedNeighbor.y].cost >= 0) {
-                    minCost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
-                    finish = testedNeighbor;
+                inSandArrival = 0;
+                if (testedNeighbor.x < graph->width && testedNeighbor.x >= 0 && testedNeighbor.y < graph->height &&
+                    testedNeighbor.y >= 0) {
+                    if (graph->nodes[testedNeighbor.x][testedNeighbor.y].type == '~') {
+                        inSandArrival = 1;
+                    }
+
+                    if (minCost >= graph->nodes[testedNeighbor.x][testedNeighbor.y].cost
+                        && graph->nodes[testedNeighbor.x][testedNeighbor.y].cost >= 0) {
+                        if (!inSandArrival || (inSandArrival && (i == 0 || j == 0))) {
+                            minCost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
+                            finish = testedNeighbor;
+                        }
+                    }
                 }
             }
         }
@@ -242,6 +301,55 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
     updateSpeedTileQueue(path);
 
     return path;
+}
+
+void correctPath(MapGraph *graph, TileQueue *path) {
+
+    TileQueueNode *cur;
+    int velocityX, velocityY;
+    int nextVelocityX, nextVelocityY;
+    int newPosX, newPosY;
+
+    cur = path->head;
+
+    while (cur != path->tail) {
+
+        velocityX = cur->value.speedX - cur->next->value.speedX;
+        velocityY = cur->value.speedY - cur->next->value.speedY;
+
+        if (velocityX >= 2 || velocityX <= -2 || velocityY >= 2 || velocityY <= -2) {
+            if (cur->next->next != NULL) {
+                nextVelocityX = cur->value.speedX - cur->next->next->value.speedX;
+                nextVelocityY = cur->value.speedY - cur->next->next->value.speedY;
+
+                if ((nextVelocityX >= -1 && nextVelocityX <= 1) && (nextVelocityY >= -1 && nextVelocityY <= 1)) {
+                    newPosX = (int) ((cur->value.position.x - cur->next->next->value.position.x) / 2);
+                    newPosY = (int) ((cur->value.position.y - cur->next->next->value.position.y) / 2);
+
+                    newPosX = cur->value.position.x - newPosX;
+                    newPosY = cur->value.position.y - newPosY;
+
+                    //Checker le type de case (joueur, sable...)
+                    if (graph->nodes[newPosX][newPosY].cost != -1) {
+
+                        cur->next->value.cost = graph->nodes[newPosX][newPosY].cost;
+                        cur->next->value.position.x = newPosX;
+                        cur->next->value.position.y = newPosY;
+
+                        cur->value.speedX = newPosX - cur->value.position.x;
+                        cur->value.speedY = newPosY - cur->value.position.y;
+
+                        cur->next->value.speedX = cur->next->next->value.position.x - newPosX;
+                        cur->next->value.speedY = cur->next->next->value.position.y - newPosY;
+
+                    }
+                }
+            }
+        }
+
+        cur = cur->next;
+    }
+
 }
 
 int computeCost(int ddx, int ddy, int dx, int dy, int inSand) {
