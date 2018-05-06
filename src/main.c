@@ -24,7 +24,7 @@ int main() {
     int i;
     FILE* info = fopen("raceLog.txt", "w");
 
-    MapStructure map;
+    MapStructure map, baseMap;
     int fuel;
     int boostCount = 5;
     int lap = 0;
@@ -33,19 +33,21 @@ int main() {
     int dx = 0, dy = 0;
     char action[100];
 
-    char positions[100];
+
     MapGraph *graph;
-    Vector2D ourPosition;
-    int computedGraph = 0;
     TileQueue *path;
     Tile t;
 
+    char positions[100];
+    Vector2D ourPosition, firstCompetitorPosition, secondCompetitorPosition;
     char posX[10], posY[10];
+    char posXFirstCompetitor[10], posYFirstCompetitor[10];
+    char posXSecondCompetitor[10], posYSecondCompetitor[10];
 
     /*Reading of the map*/
 
     readMapFromStdin(&map);
-    saveMapAsFile(map, "mapSave.txt");
+    baseMap = copyMap(map);
     graph = allocateMapGraph(&map);
 
     /*Reading positions at each turn*/
@@ -56,21 +58,31 @@ int main() {
         while (fread(&c, sizeof(char), 1, stdin) == 1 && c != '\n') {
             positions[cpt] = c;
             cpt++;
-            fprintf(info, "%c", c);
-            fflush(info);
         }
         positions[cpt] = '\0';
 
-        sscanf(positions, "%s %s", posX, posY);
+        //FIXME bien séparer la dernière composante
+        sscanf(positions, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
+               posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
+        fprintf(info, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
+               posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
+
         ourPosition.x = atoi(posX);
         ourPosition.y = atoi(posY);
+//        firstCompetitorPosition.x = atoi(posXFirstCompetitor);
+//        firstCompetitorPosition.y = atoi(posYFirstCompetitor);
+//        secondCompetitorPosition.x = atoi(posXSecondCompetitor);
+//        secondCompetitorPosition.y = atoi(posYSecondCompetitor);
 
-        if(!computedGraph) {
-            computedGraph = 1;
-            dijkstraAlgorithm(map, graph, ourPosition);
-            path = buildBestPath(graph, ourPosition);
-            correctPath(graph, path);
-        }
+//        writeMapTile(&map, firstCompetitorPosition, '.');
+//        writeMapTile(&map, secondCompetitorPosition, '.');
+
+        dijkstraAlgorithm(map, graph, ourPosition);
+        path = buildBestPath(graph, ourPosition);
+        correctPath(graph, path);
+
+//        regenMapTile(baseMap, &map, firstCompetitorPosition);
+//        regenMapTile(baseMap, &map, secondCompetitorPosition);
 
         dequeueTileQueue(path, &t);
 
@@ -88,6 +100,7 @@ int main() {
     }
 
     freeMap(&map);
+    freeMap(&baseMap);
     freeGraph(graph);
 
     return EXIT_SUCCESS;
