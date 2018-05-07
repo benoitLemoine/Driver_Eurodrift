@@ -56,6 +56,10 @@ int computeCost(int ddx, int ddy, int dx, int dy, int inSand);
 
 void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition);
 
+int isVisited(MapGraph *graph, Vector2D position);
+
+int getTileCost(MapGraph *graph, Vector2D position);
+
 TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition);
 
 void correctPath(MapGraph *graph, TileQueue *path);

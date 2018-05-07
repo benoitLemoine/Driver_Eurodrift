@@ -27,6 +27,12 @@
 #include "../include/mapEditing.h"
 #include "../include/tileQueue.h"
 
+
+/**
+ * Initialize a MapGraph given a MapStructure.
+ * @param map The map to initialize the graph from.
+ * @return A pointer to the newly allocated graph.
+ */
 MapGraph *allocateMapGraph(MapStructure *map) {
 
     int i, j;
@@ -107,6 +113,14 @@ void displayGraphCost(MapGraph *graph) {
     }
 }
 
+int isVisited(MapGraph *graph, Vector2D position) {
+    return graph->nodes[position.x][position.y].visited;
+}
+
+int getTileCost(MapGraph *graph, Vector2D position) {
+    return graph->nodes[position.x][position.y].cost;
+}
+
 void freeGraph(MapGraph *graph) {
 
     int i;
@@ -121,14 +135,16 @@ void freeGraph(MapGraph *graph) {
     }
 }
 
+/**
+ * Generate a valued graph given a track and a starting position.
+ * @param map The 2-dimensional character array representation if the track.
+ * @param graph The graph representation if the track.
+ * @param playerPosition The starting posiyion of the player.
+ */
 void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition) {
 
-    //TODO Refaire quand le meilleur chemin est le sable -> norme de vitesse <= 1
-    //TODO Visited des voisins à changer
-    //TODO Ajout de plusieurs fois la même case quand on fait les voisins
-
     int i, j;
-    int dvx, dvy, vx, vy;
+    int velocityForNextX, velocityForNextY, currentSpeedX, currentSpeedY;
     int inSand;
     int crossable;
     int computedCost;
@@ -141,16 +157,16 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
     MapTile *current = &(graph->nodes[playerPosition.x][playerPosition.y]);
     Vector2D testedNeighbor;
 
-    vx = 0;
-    vy = 0;
-    dvx = 0;
-    dvy = 0;
+    currentSpeedX = 0;
+    currentSpeedY = 0;
+    velocityForNextX = 0;
+    velocityForNextY = 0;
     current->cost = 0;
     current->visited = 0;
 
     t.cost = current->cost;
-    t.speedX = vx;
-    t.speedY = vy;
+    t.speedX = currentSpeedX;
+    t.speedY = currentSpeedY;
     t.position = playerPosition;
 
     enqueueByCostTileQueue(neighbors, t);
@@ -162,9 +178,8 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
         current = &(graph->nodes[t.position.x][t.position.y]);
         current->visited = 1;
 
-        //Current speed
-        vx = t.speedX;
-        vy = t.speedY;
+        currentSpeedX = t.speedX;
+        currentSpeedY = t.speedY;
 
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
@@ -182,8 +197,7 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
                 }
 
                 if (isInGrid(map, testedNeighbor)) {
-                    if (crossable && isDrivable(map, testedNeighbor) &&
-                        graph->nodes[testedNeighbor.x][testedNeighbor.y].visited == 0) {
+                    if (crossable && isDrivable(map, testedNeighbor) && !isVisited(graph, testedNeighbor)) {
 
                         if (current->type == '~') {
 
@@ -194,28 +208,27 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
                         if (!inSand || (inSand && (i == 0 || j == 0))) {
 
                             //Velocity required to reach the new tile
-                            dvx = i - vx;
-                            dvy = j - vy;
+                            velocityForNextX = i - currentSpeedX;
+                            velocityForNextY = j - currentSpeedY;
 
-                            if (dvx >= 2 || dvx <= -2) {
+                            if (velocityForNextX >= 2 || velocityForNextX <= -2) {
                                 impossibleVelocity = 1;
                             }
 
-                            if (dvy >= 2 || dvy <= -2) {
+                            if (velocityForNextY >= 2 || velocityForNextY <= -2) {
                                 impossibleVelocity = 1;
                             }
 
-                            computedCost = current->cost + computeCost(dvx, dvy, vx, vy, inSand);
+                            computedCost = current->cost + computeCost(velocityForNextX, velocityForNextY, currentSpeedX, currentSpeedY, inSand);
 
-                            if (computedCost < graph->nodes[testedNeighbor.x][testedNeighbor.y].cost &&
-                                !impossibleVelocity) {
+                            if (computedCost < getTileCost(graph, testedNeighbor) && !impossibleVelocity) {
 
                                 graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
 
                                 t.position = testedNeighbor;
-                                t.cost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
-                                t.speedX = dvx + vx;
-                                t.speedY = dvy + vy;
+                                t.cost = getTileCost(graph, testedNeighbor);
+                                t.speedX = velocityForNextX + currentSpeedX;
+                                t.speedY = velocityForNextY + currentSpeedY;
                                 enqueueByCostTileQueue(neighbors, t);
                                 removeDuplicate(neighbors, t.position);
                             }
@@ -228,6 +241,12 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
     freeTileQueue(neighbors);
 }
 
+/**
+ * Build the path with the lowest cost using a valued graph.
+ * @param graph The graph representation of the track.
+ * @param playerPosition The starting position of the player car.
+ * @return The path to follow to reach the end.
+ */
 TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
 
     //TODO Deux queues : queue périodique et queue sûre
@@ -237,10 +256,9 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
 
     int i, j;
     int minCost;
-    int inSand;
     int inSandArrival;
 
-    Vector2D finish;
+    Vector2D current;
     Vector2D testedNeighbor;
 
     TileQueue *path = initTileQueue();
@@ -248,21 +266,15 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
 
     minCost = INT_MAX;
     for (i = 0; i < graph->arrivalTileNumber; i++) {
-        if (minCost >= graph->nodes[graph->arrivalTiles[i].x][graph->arrivalTiles[i].y].cost) {
-            minCost = graph->nodes[graph->arrivalTiles[i].x][graph->arrivalTiles[i].y].cost;
-            finish = graph->arrivalTiles[i];
+        if (minCost >= getTileCost(graph, graph->arrivalTiles[i])) {
+            minCost = getTileCost(graph, graph->arrivalTiles[i]);
+            current = graph->arrivalTiles[i];
         }
     }
 
-    while (finish.x != playerPosition.x || finish.y != playerPosition.y) {
-        t.position = finish;
-        t.cost = graph->nodes[finish.x][finish.y].cost;
-
-        inSand = 0;
-
-        if (graph->nodes[finish.x][finish.y].type == '~') {
-            inSand = 1;
-        }
+    while (current.x != playerPosition.x || current.y != playerPosition.y) {
+        t.position = current;
+        t.cost = getTileCost(graph, current);
 
         minCost = INT_MAX;
         for (i = -1; i <= 1; i++) {
@@ -278,11 +290,10 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                         inSandArrival = 1;
                     }
 
-                    if (minCost >= graph->nodes[testedNeighbor.x][testedNeighbor.y].cost
-                        && graph->nodes[testedNeighbor.x][testedNeighbor.y].cost >= 0) {
+                    if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph,testedNeighbor) >= 0) {
                         if (!inSandArrival || (inSandArrival && (i == 0 || j == 0))) {
-                            minCost = graph->nodes[testedNeighbor.x][testedNeighbor.y].cost;
-                            finish = testedNeighbor;
+                            minCost = getTileCost(graph, testedNeighbor);
+                            current = testedNeighbor;
                         }
                     }
                 }
@@ -292,8 +303,8 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
         t.speedY = 0;
         enqueueTileQueue(path, t);
     }
-    t.position = finish;
-    t.cost = graph->nodes[finish.x][finish.y].cost;
+    t.position = current;
+    t.cost = getTileCost(graph, current);
     t.speedX = 0;
     t.speedY = 0;
     enqueueTileQueue(path, t);
@@ -303,6 +314,11 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
     return path;
 }
 
+/**
+ * Remove useless boosts used when the car goes in diagonal in a straight line or an open turn.
+ * @param graph Graph representation of the track.
+ * @param path The path to correct.
+ */
 void correctPath(MapGraph *graph, TileQueue *path) {
 
     TileQueueNode *cur;

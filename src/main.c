@@ -62,9 +62,9 @@ int main() {
         positions[cpt] = '\0';
 
         //FIXME bien séparer la dernière composante
-        sscanf(positions, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
+        sscanf(positions, "%s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
                posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
-        fprintf(info, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
+        fprintf(info, "%s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
                posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
 
         ourPosition.x = atoi(posX);
@@ -77,9 +77,11 @@ int main() {
 //        writeMapTile(&map, firstCompetitorPosition, '.');
 //        writeMapTile(&map, secondCompetitorPosition, '.');
 
-        dijkstraAlgorithm(map, graph, ourPosition);
-        path = buildBestPath(graph, ourPosition);
-        correctPath(graph, path);
+        if(lap == 1) {
+            dijkstraAlgorithm(map, graph, ourPosition);
+            path = buildBestPath(graph, ourPosition);
+            correctPath(graph, path);
+        }
 
 //        regenMapTile(baseMap, &map, firstCompetitorPosition);
 //        regenMapTile(baseMap, &map, secondCompetitorPosition);
