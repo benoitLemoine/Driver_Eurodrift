@@ -61,36 +61,43 @@ int main() {
         }
         positions[cpt] = '\0';
 
-        //FIXME bien séparer la dernière composante
-        sscanf(positions, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
-               posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
-        fprintf(info, "%s %s %s %s %s %s %s", posX, posY, posXFirstCompetitor,
+        sscanf(positions, "%s %s %s %s %s %s\n", posX, posY, posXFirstCompetitor,
                posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
 
         ourPosition.x = atoi(posX);
         ourPosition.y = atoi(posY);
-//        firstCompetitorPosition.x = atoi(posXFirstCompetitor);
-//        firstCompetitorPosition.y = atoi(posYFirstCompetitor);
-//        secondCompetitorPosition.x = atoi(posXSecondCompetitor);
-//        secondCompetitorPosition.y = atoi(posYSecondCompetitor);
+        firstCompetitorPosition.x = atoi(posXFirstCompetitor);
+        firstCompetitorPosition.y = atoi(posYFirstCompetitor);
+        secondCompetitorPosition.x = atoi(posXSecondCompetitor);
+        secondCompetitorPosition.y = atoi(posYSecondCompetitor);
+
+        fprintf(info, "%d %d %d %d %d %d\n", ourPosition.x, ourPosition.y, firstCompetitorPosition.x,
+                firstCompetitorPosition.y, secondCompetitorPosition.x, secondCompetitorPosition.y);
+
 
 //        writeMapTile(&map, firstCompetitorPosition, '.');
 //        writeMapTile(&map, secondCompetitorPosition, '.');
+//        graph->nodes[firstCompetitorPosition.x][firstCompetitorPosition.y].type = '.';
+//        graph->nodes[secondCompetitorPosition.x][secondCompetitorPosition.y].type = '.';
+
 
         dijkstraAlgorithm(map, graph, ourPosition);
         path = buildBestPath(graph, ourPosition);
         correctPath(graph, path);
 
+
 //        regenMapTile(baseMap, &map, firstCompetitorPosition);
 //        regenMapTile(baseMap, &map, secondCompetitorPosition);
+//        graph->nodes[firstCompetitorPosition.x][firstCompetitorPosition.y].type = readMapTile(baseMap, firstCompetitorPosition);
+//        graph->nodes[secondCompetitorPosition.x][secondCompetitorPosition.y].type = readMapTile(baseMap, secondCompetitorPosition);
 
         dequeueTileQueue(path, &t);
 
         sprintf(action, "%d %d", t.speedX - dx, t.speedY - dy);
 
-        fprintf(info, " %d %d", t.speedX, t.speedY);
-        fprintf(info, " %d %d", dx, dy);
-        fprintf(info, "%c", '\n');
+//        fprintf(info, " %d %d", t.speedX, t.speedY);
+//        fprintf(info, " %d %d", dx, dy);
+//        fprintf(info, "%c", '\n');
 
         dx = t.speedX;
         dy = t.speedY;
