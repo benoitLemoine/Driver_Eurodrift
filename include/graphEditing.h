@@ -73,4 +73,6 @@ void resetCost(MapGraph *graph);
 
 void updateCostTileQueue(MapStructure map, TileQueue *queue);
 
+int isInGraph(Vector2D testedVector, MapGraph *graph);
+
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H

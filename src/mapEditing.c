@@ -320,3 +320,21 @@ int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival) {
 
     return 1;
 }
+
+int isValideVelocity(Vector2D velocity) {
+
+    if (velocity.x >= 2) {
+        return 0;
+    }
+    if (velocity.x <= -2) {
+        return 0;
+    }
+    if (velocity.y >= 2) {
+        return 0;
+    }
+    if (velocity.y <= -2) {
+        return 0;
+    }
+
+    return 1;
+}
