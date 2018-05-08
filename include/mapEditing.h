@@ -28,6 +28,14 @@
 typedef struct {
 
     int fuelAvailable;
+    int boostCount;
+    Vector2D position;
+    Vector2D speed;
+}Car;
+
+typedef struct {
+
+    int fuelAvailable;
     int height, width;
     char** grid;
 

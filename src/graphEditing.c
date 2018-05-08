@@ -91,6 +91,21 @@ void resetVisited(MapGraph *graph) {
     }
 }
 
+void resetCost(MapGraph *graph) {
+
+    int i, j;
+
+    for (i = 0; i < graph->width; i++) {
+        for (j = 0; j < graph->height; j++) {
+            if (graph->nodes[i][j].type == '.') {
+                graph->nodes[i][j].cost = -1;
+            } else {
+                graph->nodes[i][j].cost = INT_MAX;
+            }
+        }
+    }
+}
+
 void displayGraph(MapGraph *graph) {
     int i, j;
 
@@ -137,14 +152,14 @@ void freeGraph(MapGraph *graph) {
 
 /**
  * Generate a valued graph given a track and a starting position.
- * @param map The 2-dimensional character array representation if the track.
- * @param graph The graph representation if the track.
- * @param playerPosition The starting posiyion of the player.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param graph The graph representation of the track.
+ * @param playerPosition The starting position of the player.
  */
-void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPosition) {
+void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
 
     int i, j;
-    int velocityForNextX, velocityForNextY, currentSpeedX, currentSpeedY;
+    Vector2D velocityForNext, currentSpeed;
     int inSand;
     int crossable;
     int computedCost;
@@ -154,20 +169,17 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
     TileQueue *neighbors = initTileQueue();
     Tile t;
 
-    MapTile *current = &(graph->nodes[playerPosition.x][playerPosition.y]);
+    MapTile *current = &(graph->nodes[car.position.x][car.position.y]);
     Vector2D testedNeighbor;
 
-    currentSpeedX = 0;
-    currentSpeedY = 0;
-    velocityForNextX = 0;
-    velocityForNextY = 0;
+    velocityForNext.x = 0;
+    velocityForNext.y = 0;
     current->cost = 0;
     current->visited = 0;
 
-    t.cost = current->cost;
-    t.speedX = currentSpeedX;
-    t.speedY = currentSpeedY;
-    t.position = playerPosition;
+    t.cost = 0;
+    t.speed = car.speed;
+    t.position = car.position;
 
     enqueueByCostTileQueue(neighbors, t);
 
@@ -178,8 +190,7 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
         current = &(graph->nodes[t.position.x][t.position.y]);
         current->visited = 1;
 
-        currentSpeedX = t.speedX;
-        currentSpeedY = t.speedY;
+        currentSpeed = t.speed;
 
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
@@ -190,11 +201,7 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
                 testedNeighbor.x = current->position.x + i;
                 testedNeighbor.y = current->position.y + j;
 
-                if (current->position.x == playerPosition.x && current->position.y == playerPosition.y) {
-                    crossable = 1;
-                } else {
-                    crossable = isCrossable(map, current->position, testedNeighbor);
-                }
+                crossable = isCrossable(map, current->position, testedNeighbor);
 
                 if (isInGrid(map, testedNeighbor)) {
                     if (crossable && isDrivable(map, testedNeighbor) && !isVisited(graph, testedNeighbor)) {
@@ -208,18 +215,18 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
                         if (!inSand || (inSand && (i == 0 || j == 0))) {
 
                             //Velocity required to reach the new tile
-                            velocityForNextX = i - currentSpeedX;
-                            velocityForNextY = j - currentSpeedY;
+                            velocityForNext.x = i - currentSpeed.x;
+                            velocityForNext.y = j - currentSpeed.y;
 
-                            if (velocityForNextX >= 2 || velocityForNextX <= -2) {
+                            if (velocityForNext.x >= 2 || velocityForNext.x <= -2) {
                                 impossibleVelocity = 1;
                             }
 
-                            if (velocityForNextY >= 2 || velocityForNextY <= -2) {
+                            if (velocityForNext.y >= 2 || velocityForNext.y <= -2) {
                                 impossibleVelocity = 1;
                             }
 
-                            computedCost = current->cost + computeCost(velocityForNextX, velocityForNextY, currentSpeedX, currentSpeedY, inSand);
+                            computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
 
                             if (computedCost < getTileCost(graph, testedNeighbor) && !impossibleVelocity) {
 
@@ -227,8 +234,8 @@ void dijkstraAlgorithm(MapStructure map, MapGraph *graph, Vector2D playerPositio
 
                                 t.position = testedNeighbor;
                                 t.cost = getTileCost(graph, testedNeighbor);
-                                t.speedX = velocityForNextX + currentSpeedX;
-                                t.speedY = velocityForNextY + currentSpeedY;
+                                t.speed.x = velocityForNext.x + currentSpeed.x;
+                                t.speed.y = velocityForNext.y + currentSpeed.y;
                                 enqueueByCostTileQueue(neighbors, t);
                                 removeDuplicate(neighbors, t.position);
                             }
@@ -272,7 +279,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
         }
     }
 
-    while (current.x != playerPosition.x || current.y != playerPosition.y) {
+    while (!isEqualVector2D(current, playerPosition)) {
         t.position = current;
         t.cost = getTileCost(graph, current);
 
@@ -299,14 +306,14 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                 }
             }
         }
-        t.speedX = 0;
-        t.speedY = 0;
+        t.speed.x = 0;
+        t.speed.y = 0;
         enqueueTileQueue(path, t);
     }
     t.position = current;
     t.cost = getTileCost(graph, current);
-    t.speedX = 0;
-    t.speedY = 0;
+    t.speed.x = 0;
+    t.speed.y = 0;
     enqueueTileQueue(path, t);
 
     updateSpeedTileQueue(path);
@@ -322,41 +329,40 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
 void correctPath(MapGraph *graph, TileQueue *path) {
 
     TileQueueNode *cur;
-    int velocityX, velocityY;
-    int nextVelocityX, nextVelocityY;
-    int newPosX, newPosY;
+    Vector2D velocity, nextVelocity;
+    Vector2D newPos;
 
     cur = path->head;
 
     while (cur != path->tail) {
 
-        velocityX = cur->value.speedX - cur->next->value.speedX;
-        velocityY = cur->value.speedY - cur->next->value.speedY;
+        velocity.x = cur->value.speed.x - cur->next->value.speed.x;
+        velocity.y = cur->value.speed.y - cur->next->value.speed.y;
 
-        if (velocityX >= 2 || velocityX <= -2 || velocityY >= 2 || velocityY <= -2) {
+        if (velocity.x >= 2 || velocity.x <= -2 || velocity.y >= 2 || velocity.y <= -2) {
             if (cur->next->next != NULL) {
-                nextVelocityX = cur->value.speedX - cur->next->next->value.speedX;
-                nextVelocityY = cur->value.speedY - cur->next->next->value.speedY;
+                nextVelocity.x = cur->value.speed.x - cur->next->next->value.speed.x;
+                nextVelocity.y = cur->value.speed.y - cur->next->next->value.speed.y;
 
-                if ((nextVelocityX >= -1 && nextVelocityX <= 1) && (nextVelocityY >= -1 && nextVelocityY <= 1)) {
-                    newPosX = (int) ((cur->value.position.x - cur->next->next->value.position.x) / 2);
-                    newPosY = (int) ((cur->value.position.y - cur->next->next->value.position.y) / 2);
+                if ((nextVelocity.x >= -1 && nextVelocity.x <= 1) && (nextVelocity.y >= -1 && nextVelocity.y <= 1)) {
+                    newPos.x = (int) ((cur->value.position.x - cur->next->next->value.position.x) / 2);
+                    newPos.y = (int) ((cur->value.position.y - cur->next->next->value.position.y) / 2);
 
-                    newPosX = cur->value.position.x - newPosX;
-                    newPosY = cur->value.position.y - newPosY;
+                    newPos.x = cur->value.position.x - newPos.x;
+                    newPos.y = cur->value.position.y - newPos.y;
 
                     //Checker le type de case (joueur, sable...)
-                    if (graph->nodes[newPosX][newPosY].cost != -1) {
+                    if (graph->nodes[newPos.x][newPos.y].cost != -1) {
 
-                        cur->next->value.cost = graph->nodes[newPosX][newPosY].cost;
-                        cur->next->value.position.x = newPosX;
-                        cur->next->value.position.y = newPosY;
+                        cur->next->value.cost = graph->nodes[newPos.x][newPos.y].cost;
+                        cur->next->value.position.x = newPos.x;
+                        cur->next->value.position.y = newPos.y;
 
-                        cur->value.speedX = newPosX - cur->value.position.x;
-                        cur->value.speedY = newPosY - cur->value.position.y;
+                        cur->value.speed.x = newPos.x - cur->value.position.x;
+                        cur->value.speed.y = newPos.y - cur->value.position.y;
 
-                        cur->next->value.speedX = cur->next->next->value.position.x - newPosX;
-                        cur->next->value.speedY = cur->next->next->value.position.y - newPosY;
+                        cur->next->value.speed.x = cur->next->next->value.position.x - newPos.x;
+                        cur->next->value.speed.y = cur->next->next->value.position.y - newPos.y;
 
                     }
                 }
@@ -368,10 +374,10 @@ void correctPath(MapGraph *graph, TileQueue *path) {
 
 }
 
-int computeCost(int ddx, int ddy, int dx, int dy, int inSand) {
+int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
 
-    int fuelConsumed = ddx * ddx + ddy * ddy;
-    fuelConsumed += (int) (sqrt(dx * dx + dy * dy) * 3.0 / 2.0);
+    int fuelConsumed = velocity.x * velocity.x + velocity.y * velocity.y;
+    fuelConsumed += (int) (sqrt(speed.x * speed.x + speed.y * speed.y) * 3.0 / 2.0);
     if (inSand) {
         fuelConsumed += 1;
     }

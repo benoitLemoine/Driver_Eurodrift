@@ -54,8 +54,8 @@ MU_TEST(assertIsNotEmptyTileQueue) {
 
     queue = initTileQueue();
     t.position = v;
-    t.speedX = 0;
-    t.speedY = 1;
+    t.speed.x = 0;
+    t.speed.y = 1;
     t.cost = 1;
 
     enqueueTileQueue(queue, t);
@@ -75,15 +75,15 @@ MU_TEST(assertEnqueueEmptyTileQueue) {
     v.y = 6;
 
     t.position = v;
-    t.speedX = 0;
-    t.speedY = 1;
+    t.speed.x = 0;
+    t.speed.y = 1;
     t.cost = 1;
 
     enqueueTileQueue(queue, t);
     mu_check(queue->tail->value.position.x == 5);
     mu_check(queue->tail->value.position.y == 6);
-    mu_check(queue->tail->value.speedX == 0);
-    mu_check(queue->tail->value.speedY == 1);
+    mu_check(queue->tail->value.speed.x == 0);
+    mu_check(queue->tail->value.speed.y == 1);
     mu_check(queue->tail->value.cost == 1);
 
     freeTileQueue(queue);
@@ -100,8 +100,8 @@ MU_TEST(assertEnqueueNotEmptyTileQueue) {
     v.y = 6;
 
     t.position = v;
-    t.speedX = 0;
-    t.speedY = 1;
+    t.speed.x = 0;
+    t.speed.y = 1;
     t.cost = 5;
 
     enqueueTileQueue(queue, t);
@@ -110,16 +110,16 @@ MU_TEST(assertEnqueueNotEmptyTileQueue) {
     v.y = 0;
 
     t.position = v;
-    t.speedX = 2;
-    t.speedY = 0;
+    t.speed.x = 2;
+    t.speed.y = 0;
     t.cost = 1;
 
     enqueueTileQueue(queue, t);
 
     mu_check(queue->tail->value.position.x == 5);
     mu_check(queue->tail->value.position.y == 6);
-    mu_check(queue->tail->value.speedX == 0);
-    mu_check(queue->tail->value.speedY == 1);
+    mu_check(queue->tail->value.speed.x == 0);
+    mu_check(queue->tail->value.speed.y == 1);
     mu_check(queue->tail->value.cost == 5);
 
     freeTileQueue(queue);
@@ -158,8 +158,8 @@ MU_TEST(assertDequeueNotEmptyTileQueue) {
     v.y = 6;
 
     t->position = v;
-    t->speedX = 0;
-    t->speedY = 1;
+    t->speed.x = 0;
+    t->speed.y = 1;
     t->cost = 5;
 
     enqueueTileQueue(queue, *t);
@@ -168,8 +168,8 @@ MU_TEST(assertDequeueNotEmptyTileQueue) {
     v.y = 0;
 
     t->position = v;
-    t->speedX = 2;
-    t->speedY = 0;
+    t->speed.x = 2;
+    t->speed.y = 0;
     t->cost = 1;
 
     enqueueTileQueue(queue, *t);
@@ -179,8 +179,8 @@ MU_TEST(assertDequeueNotEmptyTileQueue) {
     mu_check(res == 1);
     mu_check(queue->tail->value.position.x == 5);
     mu_check(queue->tail->value.position.y == 6);
-    mu_check(queue->tail->value.speedX == 0);
-    mu_check(queue->tail->value.speedY == 1);
+    mu_check(queue->tail->value.speed.x == 0);
+    mu_check(queue->tail->value.speed.y == 1);
     mu_check(queue->tail->value.cost == 5);
 
     free(t);
@@ -237,19 +237,18 @@ MU_TEST(assertAllocateMapGraph) {
 
 MU_TEST(testDijkstra) {
 
+    Car car;
     MapGraph *graph;
     MapStructure map;
 
-    Vector2D v;
-
-    v.x = 43;
-    v.y = 3;
+    car.position.x = 43;
+    car.position.y = 3;
 
     readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_virage_sable.txt");
 
     graph = allocateMapGraph(&map);
 
-    dijkstraAlgorithm(map, graph, v);
+    computeOneByOneGraph(map, graph, car);
 
     displayGraph(graph);
     displayGraphCost(graph);
@@ -260,21 +259,21 @@ MU_TEST(testDijkstra) {
 
 MU_TEST(testbestPath) {
 
+    Car car;
     MapGraph *graph;
     MapStructure map;
 
-    Vector2D v;
     TileQueue *path;
 
-    v.x = 87;
-    v.y = 0;
+    car.position.x = 87;
+    car.position.y = 0;
 
     readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/f-Zero_Death_Wind.txt");
 
     graph = allocateMapGraph(&map);
 
-    dijkstraAlgorithm(map, graph, v);
-    path = buildBestPath(graph, v);
+    computeOneByOneGraph(map, graph, car);
+    path = buildBestPath(graph, car.position);
     correctPath(graph, path);
 
     displayGraphCost(graph);
@@ -290,7 +289,7 @@ MU_TEST_SUITE(suiteTestMapGraph){
     MU_RUN_TEST(testbestPath);
 }
 
-int main(int argc, char *argv[]) {
+int main() {
 
     MU_RUN_SUITE(suiteTestTileQueue);
     MU_RUN_SUITE(suiteTestMapGraph);

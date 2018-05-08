@@ -27,8 +27,7 @@
 
 typedef struct {
     int cost;
-    int speedX;
-    int speedY;
+    Vector2D speed;
     Vector2D position;
 } Tile;
 

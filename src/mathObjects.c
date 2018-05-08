@@ -16,20 +16,22 @@
 
 
 /**
- * @file mathObjects.h
+ * @file mathObjects.c
  */
 
+#include "../include/mathObjects.h"
 
-#ifndef DRIVER_EURODRIFT_MATHOBJECTS_H
-#define DRIVER_EURODRIFT_MATHOBJECTS_H
+int isEqualVector2D(Vector2D firstVector, Vector2D secondVector) {
 
-typedef struct Vector2D {
+    if (firstVector.x != secondVector.x) {
+        return 0;
+    }
 
-    int x;
-    int y;
-}Vector2D;
+    if (firstVector.y != secondVector.y) {
+        return 0;
+    }
 
-
-int isEqualVector2D(Vector2D firstVector, Vector2D secondVector);
-
-#endif //DRIVER_EURODRIFT_MATHOBJECTS_H
+    return 1;
+}
+ 
+ 

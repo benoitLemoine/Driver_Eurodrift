@@ -13,16 +13,30 @@ DRIVER = Driver_Eurodrift
 SRC = $(wildcard $(SRCDIR)*.c)
 OBJ = $(SRC:$(SRCDIR)%.c=$(OBJDIR)%.o)
 
+all : $(OBJ) $(TESTS) $(DRIVER)
+
+## Objects files
+
 $(OBJDIR)%.o : $(SRCDIR)%.c
 	$(CC) -o $@ -c $(CCFLAGS) $< -g
 
-all : $(OBJ) $(TESTS) $(DRIVER)
+## Executables
 
-$(TEST_MAP) : $(OBJDIR)mapEditing.o $(OBJDIR)mapEditingTest.o
+$(TEST_MAP) : $(OBJDIR)mapEditing.o $(OBJDIR)mapEditingTest.o $(OBJDIR)mathObjects.o
 	gcc $^ -o $(BINDIR)$@
 
-$(TEST_GRAPH) : $(OBJDIR)mapEditing.o $(OBJDIR)testGraphEditing.o $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o
+$(TEST_GRAPH) : $(OBJDIR)mapEditing.o $(OBJDIR)testGraphEditing.o $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o $(OBJDIR)mathObjects.o
 	gcc $^ -o $(BINDIR)$@ -lm
 
-$(DRIVER) : $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o $(OBJDIR)mapEditing.o $(OBJDIR)main.o
+$(DRIVER) : $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o $(OBJDIR)mapEditing.o $(OBJDIR)main.o $(OBJDIR)mathObjects.o
 	gcc $^ -o $(BINDIR)$@ -lm
+
+## Cleaning 
+
+clean : 
+	-rm $(OBJDIR)/*.o
+
+distclean : clean
+	-rm $(BINDIR)/$(TEST_GRAPH)
+	-rm $(BINDIR)/$(TEST_MAP)
+	-rm $(BINDIR)/$(DRIVER)

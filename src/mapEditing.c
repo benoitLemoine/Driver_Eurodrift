@@ -294,7 +294,7 @@ int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival) {
         return 0;
     }
 
-    line(departure.x, departure.y,arrival.x, arrival.y, &lineStructure);
+    line(departure.x, departure.y, arrival.x, arrival.y, &lineStructure);
 
     while (nextPoint(&lineStructure, &computedPosition, 1) == 1) {
       positionBuffer.x = computedPosition.x;

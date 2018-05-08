@@ -6,49 +6,37 @@
 #include "../include/graphEditing.h"
 #include "../include/tileQueue.h"
 
-
-int fuelConsumedThisTurn(int ddx, int ddy, int dx, int dy, int inSand) {
-
-    int fuelConsumed = ddx * ddx + ddy * ddy;
-    fuelConsumed += (int)(sqrt(dx * dx + dy * dy) * 3.0 / 2.0);
-
-    if (inSand) {
-        fuelConsumed += 1;
-    }
-    return -fuelConsumed;
-}
-
 int main() {
 
-    char c;
-    int i;
-    FILE* info = fopen("raceLog.txt", "w");
-
     MapStructure map, baseMap;
-    int fuel;
-    int boostCount = 5;
-    int lap = 0;
-    int cpt;
-    int ddx = 1, ddy = 0;
-    int dx = 0, dy = 0;
-    char action[100];
-
-
+    Car car;
     MapGraph *graph;
     TileQueue *path;
     Tile t;
 
+    char c;
+    int lap = 0;
+    int cpt;
+
     char positions[100];
-    Vector2D ourPosition, firstCompetitorPosition, secondCompetitorPosition;
+    Vector2D firstCompetitorPosition, secondCompetitorPosition;
     char posX[10], posY[10];
     char posXFirstCompetitor[10], posYFirstCompetitor[10];
     char posXSecondCompetitor[10], posYSecondCompetitor[10];
+
+    char action[100];
+
+    FILE* info = fopen("raceLog.txt", "w");
 
     /*Reading of the map*/
 
     readMapFromStdin(&map);
     baseMap = copyMap(map);
     graph = allocateMapGraph(&map);
+
+    car.fuelAvailable = map.fuelAvailable;
+    car.speed.x = 0;
+    car.speed.y = 0;
 
     /*Reading positions at each turn*/
 
@@ -64,45 +52,55 @@ int main() {
         sscanf(positions, "%s %s %s %s %s %s\n", posX, posY, posXFirstCompetitor,
                posYFirstCompetitor, posXSecondCompetitor, posYSecondCompetitor);
 
-        ourPosition.x = atoi(posX);
-        ourPosition.y = atoi(posY);
+
+        /*Convert position from string to int*/
+        car.position.x = atoi(posX);
+        car.position.y = atoi(posY);
         firstCompetitorPosition.x = atoi(posXFirstCompetitor);
         firstCompetitorPosition.y = atoi(posYFirstCompetitor);
         secondCompetitorPosition.x = atoi(posXSecondCompetitor);
         secondCompetitorPosition.y = atoi(posYSecondCompetitor);
 
-        fprintf(info, "%d %d %d %d %d %d\n", ourPosition.x, ourPosition.y, firstCompetitorPosition.x,
-                firstCompetitorPosition.y, secondCompetitorPosition.x, secondCompetitorPosition.y);
+        /*Put competitors on the map*/
+        writeMapTile(&map, firstCompetitorPosition, '.');
+        writeMapTile(&map, secondCompetitorPosition, '.');
 
+        if (lap == 1) {
 
-//        writeMapTile(&map, firstCompetitorPosition, '.');
-//        writeMapTile(&map, secondCompetitorPosition, '.');
-//        graph->nodes[firstCompetitorPosition.x][firstCompetitorPosition.y].type = '.';
-//        graph->nodes[secondCompetitorPosition.x][secondCompetitorPosition.y].type = '.';
+            writeMapTile(&map, car.position, '#');
+            writeMapTile(&baseMap, car.position, '#');
 
-
-        if(lap == 1) {
-            dijkstraAlgorithm(map, graph, ourPosition);
-            path = buildBestPath(graph, ourPosition);
+            computeOneByOneGraph(map, graph, car);
+            path = buildBestPath(graph, car.position);
             correctPath(graph, path);
+
+            dequeueTileQueue(path, &t);
+        }
+        else {
+
+            dequeueTileQueue(path, &t);
+
+            if(!isCrossable(map, car.position, t.position)) {
+                resetCost(graph);
+                resetVisited(graph);
+
+                computeOneByOneGraph(map, graph, car);
+                path = buildBestPath(graph, car.position);
+                correctPath(graph, path);
+
+                dequeueTileQueue(path, &t);
+            }
         }
 
+        sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
 
-//        regenMapTile(baseMap, &map, firstCompetitorPosition);
-//        regenMapTile(baseMap, &map, secondCompetitorPosition);
-//        graph->nodes[firstCompetitorPosition.x][firstCompetitorPosition.y].type = readMapTile(baseMap, firstCompetitorPosition);
-//        graph->nodes[secondCompetitorPosition.x][secondCompetitorPosition.y].type = readMapTile(baseMap, secondCompetitorPosition);
+        /*Reset competitors positions on the map*/
+        regenMapTile(baseMap, &map, firstCompetitorPosition);
+        regenMapTile(baseMap, &map, secondCompetitorPosition);
 
-        dequeueTileQueue(path, &t);
+        car.speed.x = t.speed.x;
+        car.speed.y = t.speed.y;
 
-        sprintf(action, "%d %d", t.speedX - dx, t.speedY - dy);
-
-//        fprintf(info, " %d %d", t.speedX, t.speedY);
-//        fprintf(info, " %d %d", dx, dy);
-//        fprintf(info, "%c", '\n');
-
-        dx = t.speedX;
-        dy = t.speedY;
         fprintf(stdout, "%s\n", action);
         fflush(stdout);
         fflush(info);
