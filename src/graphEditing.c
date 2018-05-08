@@ -334,7 +334,7 @@ void correctPath(MapGraph *graph, TileQueue *path) {
                 nextVelocity.x = cur->value.speed.x - cur->next->next->value.speed.x;
                 nextVelocity.y = cur->value.speed.y - cur->next->next->value.speed.y;
 
-                if ((nextVelocity.x >= -1 && nextVelocity.x <= 1) && (nextVelocity.y >= -1 && nextVelocity.y <= 1)) {
+                if (isValideVelocity(nextVelocity)) {
                     newPos.x = (int) ((cur->value.position.x - cur->next->next->value.position.x) / 2);
                     newPos.y = (int) ((cur->value.position.y - cur->next->next->value.position.y) / 2);
 
