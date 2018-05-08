@@ -14,6 +14,8 @@ int main() {
     TileQueue *path;
     Tile t;
 
+    Vector2D tileToReach;
+
     char c;
     int lap = 0;
     int cpt;
@@ -80,7 +82,10 @@ int main() {
 
             dequeueTileQueue(path, &t);
 
-            if(!isCrossable(map, car.position, t.position)) {
+            tileToReach.x = car.position.x + t.speed.x;
+            tileToReach.y = car.position.y + t.speed.y;
+
+            if(!isCrossable(map, car.position, tileToReach)) {
                 resetCost(&map, graph);
                 resetVisited(graph);
 
