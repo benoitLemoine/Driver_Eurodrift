@@ -206,6 +206,19 @@ int isArrival(MapStructure map, Vector2D position) {
     return 0;
 }
 
+int isSand(MapStructure map, Vector2D position) {
+
+    if (!isInGrid(map, position)) {
+        return 0;
+    }
+
+    if (map.grid[position.x][position.y] == '~') {
+        return 1;
+    }
+
+    return 0;
+}
+
 
 int isDrivable(MapStructure map, Vector2D position) {
 

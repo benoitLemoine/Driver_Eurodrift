@@ -72,7 +72,7 @@ int main() {
 
             computeOneByOneGraph(map, graph, car);
             path = buildBestPath(graph, car.position);
-            correctPath(graph, path);
+            removeUselessBoosts(map, path);
 
             dequeueTileQueue(path, &t);
         }
@@ -86,7 +86,7 @@ int main() {
 
                 computeOneByOneGraph(map, graph, car);
                 path = buildBestPath(graph, car.position);
-                correctPath(graph, path);
+                removeUselessBoosts(map, path);
 
                 dequeueTileQueue(path, &t);
             }

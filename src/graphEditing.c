@@ -195,7 +195,6 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
 
-                inSand = 0;
                 impossibleVelocity = 0;
 
                 testedNeighbor.x = current->position.x + i;
@@ -206,11 +205,7 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
                 if (isInGrid(map, testedNeighbor)) {
                     if (crossable && isDrivable(map, testedNeighbor) && !isVisited(graph, testedNeighbor)) {
 
-                        if (current->type == '~') {
-
-                            inSand = 1;
-
-                        }
+                        inSand = isSand(map, current->position);
 
                         if (!inSand || (inSand && (i == 0 || j == 0))) {
 
@@ -297,7 +292,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                         inSandArrival = 1;
                     }
 
-                    if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph,testedNeighbor) >= 0) {
+                    if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph, testedNeighbor) >= 0) {
                         if (!inSandArrival || (inSandArrival && (i == 0 || j == 0))) {
                             minCost = getTileCost(graph, testedNeighbor);
                             current = testedNeighbor;
@@ -326,50 +321,124 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
  * @param graph Graph representation of the track.
  * @param path The path to correct.
  */
-void correctPath(MapGraph *graph, TileQueue *path) {
+void removeUselessBoosts(MapStructure map, TileQueue *path) {
 
+    //TODO Make it correct path for up to 3 positions further
+
+    TileQueue *copy;
     TileQueueNode *cur;
+    TileQueueNode *cursorChange;
     Vector2D velocity, nextVelocity;
-    Vector2D newPos;
+    Vector2D diffPos;
 
     cur = path->head;
 
     while (cur != path->tail) {
 
+        //if a velocity difference of more than 1/-1 occurs between two Tiles, that means a boost is used.
         velocity.x = cur->value.speed.x - cur->next->value.speed.x;
         velocity.y = cur->value.speed.y - cur->next->value.speed.y;
 
         if (velocity.x >= 2 || velocity.x <= -2 || velocity.y >= 2 || velocity.y <= -2) {
             if (cur->next->next != NULL) {
+
+                //if the velocity difference doesn't exceed 1/-1 when comparing
+                // the current Tile with the Tile 2 step ahead, that means that the boost used was unecessary.
                 nextVelocity.x = cur->value.speed.x - cur->next->next->value.speed.x;
                 nextVelocity.y = cur->value.speed.y - cur->next->next->value.speed.y;
 
                 if ((nextVelocity.x >= -1 && nextVelocity.x <= 1) && (nextVelocity.y >= -1 && nextVelocity.y <= 1)) {
-                    newPos.x = (int) ((cur->value.position.x - cur->next->next->value.position.x) / 2);
-                    newPos.y = (int) ((cur->value.position.y - cur->next->next->value.position.y) / 2);
 
-                    newPos.x = cur->value.position.x - newPos.x;
-                    newPos.y = cur->value.position.y - newPos.y;
+                    //if a line exists between the two Tiles and it is crossable, the path is corrected to prevents the usage of a boost.
+                    if (isCrossable(map, cur->value.position, cur->next->next->value.position)) {
 
-                    //Checker le type de case (joueur, sable...)
-                    if (graph->nodes[newPos.x][newPos.y].cost != -1) {
+                        cursorChange = cur->next;
+                        diffPos.x = cur->next->next->value.position.x - cur->value.position.x;
+                        diffPos.y = cur->next->next->value.position.y - cur->value.position.y;
 
-                        cur->next->value.cost = graph->nodes[newPos.x][newPos.y].cost;
-                        cur->next->value.position.x = newPos.x;
-                        cur->next->value.position.y = newPos.y;
+                        while (cursorChange != cur->next->next) {
 
-                        cur->value.speed.x = newPos.x - cur->value.position.x;
-                        cur->value.speed.y = newPos.y - cur->value.position.y;
+                            if(diffPos.x == 0) {
+                                cursorChange->value.position.x = cur->value.position.x;
+                            }
+                            else {
+                                if (diffPos.x > 0) {
+                                    cursorChange->value.position.x = cursorChange->prev->value.position.x + 1;
+                                }
+                                else {
+                                    cursorChange->value.position.x = cursorChange->prev->value.position.x - 1;
+                                }
+                            }
 
-                        cur->next->value.speed.x = cur->next->next->value.position.x - newPos.x;
-                        cur->next->value.speed.y = cur->next->next->value.position.y - newPos.y;
+                            if(diffPos.y == 0) {
+                                cursorChange->value.position.y = cursorChange->prev->value.position.y;
+                            }
+                            else {
+                                if (diffPos.y > 0) {
+                                    cursorChange->value.position.y = cursorChange->prev->value.position.y + 1;
+                                }
+                                else {
+                                    cursorChange->value.position.y = cursorChange->prev->value.position.y - 1;
+                                }
+                            }
 
+                            cursorChange->prev->value.speed.x = cursorChange->value.position.x - cursorChange->prev->value.position.x;
+                            cursorChange->prev->value.speed.y = cursorChange->value.position.y - cursorChange->prev->value.position.y;
+
+                            cursorChange->value.cost = 0;
+                            cursorChange = cursorChange->next;
+                        }
+
+                        cursorChange->prev->value.speed.x = cursorChange->value.position.x - cursorChange->prev->value.position.x;
+                        cursorChange->prev->value.speed.y = cursorChange->value.position.y - cursorChange->prev->value.position.y;
+
+                        copy = copyTileQueue(path);
+                        updateCostTileQueue(map, copy);
+                        if(copy->tail->value.cost <= path->tail->value.cost) {
+                            updateCostTileQueue(map, path);
+                        }
                     }
                 }
             }
         }
 
         cur = cur->next;
+    }
+    freeTileQueue(copy);
+}
+
+void updateCostTileQueue(MapStructure map, TileQueue *queue) {
+
+    TileQueueNode *cur;
+    Vector2D speed;
+    Vector2D velocityNext;
+
+    if (isEmptyTileQueue(queue)) {
+        return;
+    } else if (queue->head == queue->tail) {
+        return;
+    } else {
+
+        cur = queue->head;
+
+        speed.x = 0;
+        speed.y = 0;
+        cur->value.cost = 0;
+
+        cur = cur->next;
+
+        while (cur != queue->tail) {
+            velocityNext.x = cur->value.position.x - cur->prev->value.position.x - speed.x;
+            velocityNext.y = cur->value.position.y - cur->prev->value.position.y - speed.y;
+            cur->value.cost = cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
+            speed.x += velocityNext.x;
+            speed.y += velocityNext.y;
+            cur = cur->next;
+        }
+
+        velocityNext.x = 0;
+        velocityNext.y = 0;
+        cur->value.cost = cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
     }
 
 }

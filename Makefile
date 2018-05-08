@@ -34,9 +34,9 @@ $(DRIVER) : $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o $(OBJDIR)mapEditing.o $
 ## Cleaning 
 
 clean : 
-	-rm $(OBJDIR)/*.o
+	-rm $(OBJDIR)*.o
 
 distclean : clean
-	-rm $(BINDIR)/$(TEST_GRAPH)
-	-rm $(BINDIR)/$(TEST_MAP)
-	-rm $(BINDIR)/$(DRIVER)
+	-rm $(BINDIR)$(TEST_GRAPH)
+	-rm $(BINDIR)$(TEST_MAP)
+	-rm $(BINDIR)$(DRIVER)

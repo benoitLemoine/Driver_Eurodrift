@@ -65,11 +65,12 @@ int getTileCost(MapGraph *graph, Vector2D position);
 
 TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition);
 
-void correctPath(MapGraph *graph, TileQueue *path);
-
+void removeUselessBoosts(MapStructure map, TileQueue *path);
 
 void resetVisited(MapGraph *graph);
 
 void resetCost(MapGraph *graph);
+
+void updateCostTileQueue(MapStructure map, TileQueue *queue);
 
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H
