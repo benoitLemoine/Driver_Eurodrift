@@ -60,8 +60,7 @@ MapGraph *allocateMapGraph(MapStructure *map) {
                 coordinates.y = j;
                 graph->nodes[i][j].position = coordinates;
                 graph->nodes[i][j].visited = 0;
-                graph->nodes[i][j].type = readMapTile(*(map), coordinates);
-                if (graph->nodes[i][j].type == '.') {
+                if (readMapTile(*map, coordinates) == '.') {
                     graph->nodes[i][j].cost = -1;
                 } else {
                     graph->nodes[i][j].cost = INT_MAX;
@@ -91,29 +90,23 @@ void resetVisited(MapGraph *graph) {
     }
 }
 
-void resetCost(MapGraph *graph) {
+void resetCost(MapStructure *map, MapGraph *graph) {
 
     int i, j;
+    Vector2D coordinates;
 
     for (i = 0; i < graph->width; i++) {
         for (j = 0; j < graph->height; j++) {
-            if (graph->nodes[i][j].type == '.') {
+
+            coordinates.x = i;
+            coordinates.y = j;
+
+            if (readMapTile(*map, coordinates) == '.') {
                 graph->nodes[i][j].cost = -1;
             } else {
                 graph->nodes[i][j].cost = INT_MAX;
             }
         }
-    }
-}
-
-void displayGraph(MapGraph *graph) {
-    int i, j;
-
-    for (j = 0; j < graph->height; j++) {
-        for (i = 0; i < graph->width; i++) {
-            printf("%c ", graph->nodes[i][j].type);
-        }
-        printf("\n");
     }
 }
 
@@ -156,7 +149,7 @@ void freeGraph(MapGraph *graph) {
  * @param graph The graph representation of the track.
  * @param playerPosition The starting position of the player.
  */
-void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
+void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
 
     int i, j;
     Vector2D velocityForNext, currentSpeed;
@@ -182,7 +175,7 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
 
     enqueueByCostTileQueue(neighbors, t);
 
-    while (!isEmptyTileQueue(neighbors) && !isArrival(map, t.position)) {
+    while (!isEmptyTileQueue(neighbors) && !isArrival(*map, t.position)) {
 
         dequeueTileQueue(neighbors, &t);
 
@@ -200,11 +193,11 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
                 testedNeighbor.x = current->position.x + i;
                 testedNeighbor.y = current->position.y + j;
 
-                crossable = isCrossable(map, current->position, testedNeighbor);
+                crossable = isCrossable(*map, current->position, testedNeighbor);
 
                 if (crossable && !isVisited(graph, testedNeighbor)) {
 
-                    if (current->type == '~') {
+                    if (readMapTile(*map, current->position) == '~') {
 
                         inSand = 1;
                     }
@@ -246,7 +239,7 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
  * @param playerPosition The starting position of the player car.
  * @return The path to follow to reach the end.
  */
-TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
+TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosition) {
 
     //TODO Deux queues : queue périodique et queue sûre
     //Arrêt quand case ajoutée = playerPosition
@@ -286,7 +279,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                 inSandArrival = 0;
                 if (isInGraph(testedNeighbor, graph)) {
 
-                    if (graph->nodes[testedNeighbor.x][testedNeighbor.y].type == '~') {
+                    if (readMapTile(*map, testedNeighbor) == '~') {
                         inSandArrival = 1;
                     }
 

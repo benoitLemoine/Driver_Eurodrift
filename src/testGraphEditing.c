@@ -202,8 +202,6 @@ MU_TEST(assertAllocateMapGraph) {
     MapGraph *graph;
     MapStructure map;
 
-    Vector2D v;
-
     srand(time(NULL));
 
     readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_droit_au_but.txt");
@@ -211,25 +209,6 @@ MU_TEST(assertAllocateMapGraph) {
     graph = allocateMapGraph(&map);
     mu_assert(graph != NULL, "Error, graph is NULL");
 
-    v.x = rand()% graph->width;
-    v.y = rand()% graph->height;
-
-    printf("Tile[%d][%d]\n",v.x, v.y);
-    mu_assert(graph->nodes[v.x][v.y].type == readMapTile(map, v), "Error, tiles differents.");
-
-    v.x = rand()% graph->width;
-    v.y = rand()% graph->height;
-
-    printf("Tile[%d][%d]\n",v.x, v.y);
-    mu_assert(graph->nodes[v.x][v.y].type == readMapTile(map, v), "Error, tiles differents.");
-
-    v.x = rand()% graph->width;
-    v.y = rand()% graph->height;
-
-    printf("Tile[%d][%d]\n",v.x, v.y);
-    mu_assert(graph->nodes[v.x][v.y].type == readMapTile(map, v), "Error, tiles differents.");
-
-    displayGraph(graph);
     freeGraph(graph);
     freeMap(&map);
 
@@ -248,9 +227,8 @@ MU_TEST(testDijkstra) {
 
     graph = allocateMapGraph(&map);
 
-    computeOneByOneGraph(map, graph, car);
+    computeOneByOneGraph(&map, graph, car);
 
-    displayGraph(graph);
     displayGraphCost(graph);
     freeGraph(graph);
     freeMap(&map);
@@ -272,8 +250,8 @@ MU_TEST(testbestPath) {
 
     graph = allocateMapGraph(&map);
 
-    computeOneByOneGraph(map, graph, car);
-    path = buildBestPath(graph, car.position);
+    computeOneByOneGraph(&map, graph, car);
+    path = buildBestPath(&map, graph, car.position);
     correctPath(graph, path);
 
     displayGraphCost(graph);

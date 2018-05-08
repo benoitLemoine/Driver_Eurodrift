@@ -89,7 +89,6 @@ void enqueueByCostTileQueue(TileQueue *queue, Tile t) {
 void enqueueTileQueue(TileQueue *queue, Tile t) {
 
     TileQueueNode *node;
-    TileQueueNode *cur;
 
     node = malloc(sizeof(TileQueueNode));
     node->value = t;

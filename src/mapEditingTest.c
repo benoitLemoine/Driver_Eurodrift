@@ -153,7 +153,7 @@ void isInGrid_Test() {
 
 void readMapTile_Test() {
 
-    int i, j;
+    int i;
     Vector2D position;
     MapStructure map;
 
@@ -185,7 +185,7 @@ void readMapTile_Test() {
 
 void writeMapTile_Test() {
 
-    int i, j;
+    int i;
     Vector2D position;
     MapStructure map;
 

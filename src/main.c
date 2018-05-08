@@ -70,8 +70,8 @@ int main() {
             writeMapTile(&map, car.position, '#');
             writeMapTile(&baseMap, car.position, '#');
 
-            computeOneByOneGraph(map, graph, car);
-            path = buildBestPath(graph, car.position);
+            computeOneByOneGraph(&map, graph, car);
+            path = buildBestPath(&map, graph, car.position);
             correctPath(graph, path);
 
             dequeueTileQueue(path, &t);
@@ -81,12 +81,11 @@ int main() {
             dequeueTileQueue(path, &t);
 
             if(!isCrossable(map, car.position, t.position)) {
-                resetCost(graph);
+                resetCost(&map, graph);
                 resetVisited(graph);
-//                graph = allocateMapGraph(&map);
 
-                computeOneByOneGraph(map, graph, car);
-                path = buildBestPath(graph, car.position);
+                computeOneByOneGraph(&map, graph, car);
+                path = buildBestPath(&map, graph, car.position);
                 correctPath(graph, path);
 
                 dequeueTileQueue(path, &t);

@@ -30,7 +30,6 @@ typedef struct {
 
     Vector2D position;
     int cost;
-    char type;
     int visited;
 
 }MapTile;
@@ -46,8 +45,6 @@ typedef struct {
 
 MapGraph *allocateMapGraph(MapStructure *map);
 
-void displayGraph(MapGraph *graph);
-
 void displayGraphCost(MapGraph *graph);
 
 void freeGraph(MapGraph *graph);
@@ -55,7 +52,7 @@ void freeGraph(MapGraph *graph);
 
 int computeCost(Vector2D velocity, Vector2D speed, int inSand);
 
-void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car);
+void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car);
 
 
 int isVisited(MapGraph *graph, Vector2D position);
@@ -63,14 +60,14 @@ int isVisited(MapGraph *graph, Vector2D position);
 int getTileCost(MapGraph *graph, Vector2D position);
 
 
-TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition);
+TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosition);
 
 void correctPath(MapGraph *graph, TileQueue *path);
 
 
 void resetVisited(MapGraph *graph);
 
-void resetCost(MapGraph *graph);
+void resetCost(MapStructure *map, MapGraph *graph);
 
 int isInGraph(Vector2D testedVector, MapGraph *graph);
 
