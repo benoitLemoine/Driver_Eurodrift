@@ -72,4 +72,6 @@ void resetVisited(MapGraph *graph);
 
 void resetCost(MapGraph *graph);
 
+int isInGraph(Vector2D testedVector, MapGraph *graph);
+
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H

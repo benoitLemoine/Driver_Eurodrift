@@ -187,8 +187,8 @@ void updateSpeedTileQueue(TileQueue *queue) {
         cur = queue->head;
 
         while (cur != queue->tail) {
-            cur->value.speed.x += cur->next->value.position.x - cur->value.position.x;
-            cur->value.speed.y += cur->next->value.position.y - cur->value.position.y;
+            cur->value.speed.x = cur->next->value.position.x - cur->value.position.x;
+            cur->value.speed.y = cur->next->value.position.y - cur->value.position.y;
             cur = cur->next;
         }
     }

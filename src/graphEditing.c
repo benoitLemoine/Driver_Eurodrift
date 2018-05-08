@@ -252,7 +252,6 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
     //Arrêt quand case ajoutée = playerPosition
     //Testez les cases en changeant les visited à 0
 
-
     int i, j;
     int minCost;
     int inSandArrival;
@@ -263,6 +262,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
     TileQueue *path = initTileQueue();
     Tile t;
 
+    /*Looking for the cheapest arrival tile*/
     minCost = INT_MAX;
     for (i = 0; i < graph->arrivalTileNumber; i++) {
         if (minCost >= getTileCost(graph, graph->arrivalTiles[i])) {
@@ -271,6 +271,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
         }
     }
 
+    /*Computing cheapest path to this arrival tile using Dijkstra algorithm*/
     while (!isEqualVector2D(current, playerPosition)) {
         t.position = current;
         t.cost = getTileCost(graph, current);
@@ -283,8 +284,8 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                 testedNeighbor.y = t.position.y + j;
 
                 inSandArrival = 0;
-                if (testedNeighbor.x < graph->width && testedNeighbor.x >= 0 && testedNeighbor.y < graph->height &&
-                    testedNeighbor.y >= 0) {
+                if (isInGraph(testedNeighbor, graph)) {
+
                     if (graph->nodes[testedNeighbor.x][testedNeighbor.y].type == '~') {
                         inSandArrival = 1;
                     }
@@ -298,16 +299,13 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                 }
             }
         }
-        t.speed.x = 0;
-        t.speed.y = 0;
         enqueueTileQueue(path, t);
     }
     t.position = current;
     t.cost = getTileCost(graph, current);
-    t.speed.x = 0;
-    t.speed.y = 0;
     enqueueTileQueue(path, t);
 
+    /*Compute speeds to get from a tile to the next one*/
     updateSpeedTileQueue(path);
 
     return path;
@@ -374,4 +372,22 @@ int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
         fuelConsumed += 1;
     }
     return fuelConsumed;
+}
+
+int isInGraph(Vector2D testedVector, MapGraph *graph) {
+
+    if (testedVector.x >= graph->width) {
+        return 0;
+    }
+    if (testedVector.x < 0) {
+        return 0;
+    }
+    if (testedVector.y >= graph->height) {
+        return 0;
+    }
+    if (testedVector.y < 0) {
+        return 0;
+    }
+
+    return 1;
 }
