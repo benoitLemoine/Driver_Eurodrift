@@ -68,6 +68,8 @@ int isDrivable(MapStructure map, Vector2D position);
 
 int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival);
 
+int isValideVelocity(Vector2D velocity);
+
 
 void readMapFromFile(MapStructure* map, char *filename);
 

@@ -83,6 +83,7 @@ int main() {
             if(!isCrossable(map, car.position, t.position)) {
                 resetCost(graph);
                 resetVisited(graph);
+//                graph = allocateMapGraph(&map);
 
                 computeOneByOneGraph(map, graph, car);
                 path = buildBestPath(graph, car.position);

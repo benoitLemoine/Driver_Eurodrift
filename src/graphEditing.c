@@ -160,22 +160,21 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
 
     int i, j;
     Vector2D velocityForNext, currentSpeed;
-    int inSand;
-    int crossable;
     int computedCost;
 
+    int inSand;
+    int crossable;
     int impossibleVelocity;
 
     TileQueue *neighbors = initTileQueue();
     Tile t;
-
-    MapTile *current = &(graph->nodes[car.position.x][car.position.y]);
+    MapTile *current;
     Vector2D testedNeighbor;
 
     velocityForNext.x = 0;
     velocityForNext.y = 0;
+    current = &(graph->nodes[car.position.x][car.position.y]);
     current->cost = 0;
-    current->visited = 0;
 
     t.cost = 0;
     t.speed = car.speed;
@@ -203,42 +202,35 @@ void computeOneByOneGraph(MapStructure map, MapGraph *graph, Car car) {
 
                 crossable = isCrossable(map, current->position, testedNeighbor);
 
-                if (isInGrid(map, testedNeighbor)) {
-                    if (crossable && isDrivable(map, testedNeighbor) && !isVisited(graph, testedNeighbor)) {
+                if (crossable && !isVisited(graph, testedNeighbor)) {
 
-                        if (current->type == '~') {
+                    if (current->type == '~') {
 
-                            inSand = 1;
+                        inSand = 1;
+                    }
 
+                    if (!inSand || (i == 0 || j == 0)) {
+
+                        //Velocity required to reach the new tile
+                        velocityForNext.x = i - currentSpeed.x;
+                        velocityForNext.y = j - currentSpeed.y;
+
+                        if (!isValideVelocity(velocityForNext)) {
+                            impossibleVelocity = 1;
                         }
 
-                        if (!inSand || (inSand && (i == 0 || j == 0))) {
+                        computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
 
-                            //Velocity required to reach the new tile
-                            velocityForNext.x = i - currentSpeed.x;
-                            velocityForNext.y = j - currentSpeed.y;
+                        if (computedCost < getTileCost(graph, testedNeighbor) && !impossibleVelocity) {
 
-                            if (velocityForNext.x >= 2 || velocityForNext.x <= -2) {
-                                impossibleVelocity = 1;
-                            }
+                            graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
 
-                            if (velocityForNext.y >= 2 || velocityForNext.y <= -2) {
-                                impossibleVelocity = 1;
-                            }
-
-                            computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
-
-                            if (computedCost < getTileCost(graph, testedNeighbor) && !impossibleVelocity) {
-
-                                graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
-
-                                t.position = testedNeighbor;
-                                t.cost = getTileCost(graph, testedNeighbor);
-                                t.speed.x = velocityForNext.x + currentSpeed.x;
-                                t.speed.y = velocityForNext.y + currentSpeed.y;
-                                enqueueByCostTileQueue(neighbors, t);
-                                removeDuplicate(neighbors, t.position);
-                            }
+                            t.position = testedNeighbor;
+                            t.cost = getTileCost(graph, testedNeighbor);
+                            t.speed.x = velocityForNext.x + currentSpeed.x;
+                            t.speed.y = velocityForNext.y + currentSpeed.y;
+                            enqueueByCostTileQueue(neighbors, t);
+                            removeDuplicate(neighbors, t.position);
                         }
                     }
                 }
@@ -298,7 +290,7 @@ TileQueue *buildBestPath(MapGraph *graph, Vector2D playerPosition) {
                     }
 
                     if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph,testedNeighbor) >= 0) {
-                        if (!inSandArrival || (inSandArrival && (i == 0 || j == 0))) {
+                        if (!inSandArrival || (i == 0 || j == 0)) {
                             minCost = getTileCost(graph, testedNeighbor);
                             current = testedNeighbor;
                         }
