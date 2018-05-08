@@ -125,6 +125,62 @@ MU_TEST(assertEnqueueNotEmptyTileQueue) {
     freeTileQueue(queue);
 }
 
+MU_TEST(assertCopyTileQueue) {
+    TileQueue *queue;
+    TileQueue *copy;
+    Tile t;
+    Tile t2;
+    Vector2D v;
+
+    queue = initTileQueue();
+
+    v.x = 5;
+    v.y = 6;
+
+    t.position = v;
+    t.speed.x = 0;
+    t.speed.y = 1;
+    t.cost = 5;
+
+    enqueueTileQueue(queue, t);
+
+    v.x = 7;
+    v.y = 0;
+
+    t.position = v;
+    t.speed.x = 2;
+    t.speed.y = 0;
+    t.cost = 1;
+
+    enqueueTileQueue(queue, t);
+
+    copy = copyTileQueue(queue);
+
+    displayTileQueue(queue);
+    displayTileQueue(copy);
+
+    dequeueTileQueue(queue, &t);
+    dequeueTileQueue(copy, &t2);
+
+    mu_check(t.position.x == t2.position.x);
+    mu_check(t.position.y == t2.position.y);
+    mu_check(t.speed.x == t2.speed.x);
+    mu_check(t.speed.y == t2.speed.y);
+    mu_check(t.cost == t2.cost);
+
+    dequeueTileQueue(queue, &t);
+    dequeueTileQueue(copy, &t2);
+
+    mu_check(t.position.x == t2.position.x);
+    mu_check(t.position.y == t2.position.y);
+    mu_check(t.speed.x == t2.speed.x);
+    mu_check(t.speed.y == t2.speed.y);
+    mu_check(t.cost == t2.cost);
+
+    freeTileQueue(queue);
+    freeTileQueue(copy);
+}
+
 MU_TEST(assertDequeueEmptyTileQueue) {
     TileQueue *queue;
     Tile *t;
@@ -195,6 +251,7 @@ MU_TEST_SUITE(suiteTestTileQueue) {
     MU_RUN_TEST(assertEnqueueNotEmptyTileQueue);
     MU_RUN_TEST(assertDequeueEmptyTileQueue);
     MU_RUN_TEST(assertDequeueNotEmptyTileQueue);
+    MU_RUN_TEST(assertCopyTileQueue);
 }
 
 MU_TEST(assertAllocateMapGraph) {
@@ -243,19 +300,30 @@ MU_TEST(testbestPath) {
 
     TileQueue *path;
 
-    car.position.x = 87;
+    car.position.x = 86;
     car.position.y = 0;
+    car.speed.x = 0;
+    car.speed.y = 0;
+    car.boostCount = 5;
 
     readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/f-Zero_Death_Wind.txt");
 
+    writeMapTile(&map, car.position, '#');
+
     graph = allocateMapGraph(&map);
+    car.fuelAvailable = map.fuelAvailable;
 
     computeOneByOneGraph(&map, graph, car);
     path = buildBestPath(&map, graph, car.position);
-    correctPath(graph, path);
+    removeUselessBoosts(map, path);
+    displayTileQueue(path);
+    updateCostTileQueue(map, path);
+    displayTileQueue(path);
+    removeUselessBoosts(map, path);
 
     displayGraphCost(graph);
     displayTileQueue(path);
+    freeTileQueue(path);
     freeGraph(graph);
     freeMap(&map);
 

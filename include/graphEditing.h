@@ -62,12 +62,13 @@ int getTileCost(MapGraph *graph, Vector2D position);
 
 TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosition);
 
-void correctPath(MapGraph *graph, TileQueue *path);
-
+void removeUselessBoosts(MapStructure map, TileQueue *path);
 
 void resetVisited(MapGraph *graph);
 
 void resetCost(MapStructure *map, MapGraph *graph);
+
+void updateCostTileQueue(MapStructure map, TileQueue *queue);
 
 int isInGraph(Vector2D testedVector, MapGraph *graph);
 

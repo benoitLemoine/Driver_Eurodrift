@@ -43,6 +43,40 @@ void freeTileQueue(TileQueue *queue) {
     free(queue);
 }
 
+TileQueue *copyTileQueue(TileQueue *queue) {
+    TileQueue *copy;
+    TileQueueNode *cur;
+    Tile t;
+
+    copy = malloc(sizeof(TileQueue));
+
+    if(isEmptyTileQueue(queue)) {
+        copy->head = NULL;
+        copy->tail = NULL;
+    }
+    else {
+        cur = queue->tail;
+
+        while(cur != queue->head) {
+            t.position.x = cur->value.position.x;
+            t.position.y = cur->value.position.y;
+            t.speed.x = cur->value.speed.x;
+            t.speed.y= cur->value.speed.y;
+            t.cost = cur->value.cost;
+            enqueueTileQueue(copy, t);
+            cur = cur->prev;
+        }
+        t.position.x = cur->value.position.x;
+        t.position.y = cur->value.position.y;
+        t.speed.x = cur->value.speed.x;
+        t.speed.y= cur->value.speed.y;
+        t.cost = cur->value.cost;
+        enqueueTileQueue(copy, t);
+    }
+
+    return copy;
+}
+
 int isEmptyTileQueue(TileQueue *queue) {
     if (queue->head == NULL) {
         return 1;

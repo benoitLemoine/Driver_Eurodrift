@@ -46,6 +46,8 @@ typedef struct {
 
 TileQueue *initTileQueue();
 
+TileQueue *copyTileQueue(TileQueue *queue);
+
 int isEmptyTileQueue(TileQueue *queue);
 
 void enqueueByCostTileQueue(TileQueue *queue, Tile t);
