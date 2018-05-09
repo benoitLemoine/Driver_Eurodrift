@@ -73,7 +73,7 @@ int main() {
             writeMapTile(&baseMap, car.position, '#');
 
             computeOneByOneGraph(&map, graph, car);
-            path = buildBestPath(&map, graph, car.position);
+            path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path);
 
             dequeueTileQueue(path, &t);
@@ -90,7 +90,7 @@ int main() {
                 resetVisited(graph);
 
                 computeOneByOneGraph(&map, graph, car);
-                path = buildBestPath(&map, graph, car.position);
+                path = buildBestPath(&map, graph, car);
                 removeUselessBoosts(map, path);
 
                 dequeueTileQueue(path, &t);

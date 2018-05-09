@@ -314,7 +314,7 @@ MU_TEST(testbestPath) {
     car.fuelAvailable = map.fuelAvailable;
 
     computeOneByOneGraph(&map, graph, car);
-    path = buildBestPath(&map, graph, car.position);
+    path = buildBestPath(&map, graph, car);
     removeUselessBoosts(map, path);
     displayTileQueue(path);
     updateCostTileQueue(map, path);

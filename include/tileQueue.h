@@ -60,7 +60,7 @@ void displayTileQueue(TileQueue *queue);
 
 void removeDuplicate(TileQueue *queue, Vector2D position);
 
-void updateSpeedTileQueue(TileQueue *queue);
+void updateSpeedTileQueue(TileQueue *queue, Vector2D initialSpeed);
 
 void freeTileQueue(TileQueue *queue);
 

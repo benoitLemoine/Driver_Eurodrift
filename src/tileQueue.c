@@ -48,13 +48,9 @@ TileQueue *copyTileQueue(TileQueue *queue) {
     TileQueueNode *cur;
     Tile t;
 
-    copy = malloc(sizeof(TileQueue));
+    copy = initTileQueue();
 
-    if(isEmptyTileQueue(queue)) {
-        copy->head = NULL;
-        copy->tail = NULL;
-    }
-    else {
+    if(!isEmptyTileQueue(queue)) {
         cur = queue->tail;
 
         while(cur != queue->head) {
@@ -208,7 +204,7 @@ void removeDuplicate(TileQueue *queue, Vector2D position) {
 }
 
 //Work only when having a queue built from finish to start
-void updateSpeedTileQueue(TileQueue *queue) {
+void updateSpeedTileQueue(TileQueue *queue, Vector2D initialSpeed) {
 
     TileQueueNode *cur;
 
@@ -218,10 +214,12 @@ void updateSpeedTileQueue(TileQueue *queue) {
         return;
     } else {
         cur = queue->head;
+        cur->value.speed.x = initialSpeed.x;
+        cur->value.speed.y = initialSpeed.y;
 
         while (cur != queue->tail) {
-            cur->value.speed.x = cur->next->value.position.x - cur->value.position.x;
-            cur->value.speed.y = cur->next->value.position.y - cur->value.position.y;
+            cur->value.speed.x = cur->next->value.position.x - cur->value.position.x - cur->value.speed.x;
+            cur->value.speed.y = cur->next->value.position.y - cur->value.position.y - cur->value.speed.y;
             cur = cur->next;
         }
     }

@@ -60,7 +60,7 @@ int isVisited(MapGraph *graph, Vector2D position);
 int getTileCost(MapGraph *graph, Vector2D position);
 
 
-TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosition);
+TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car);
 
 void removeUselessBoosts(MapStructure map, TileQueue *path);
 

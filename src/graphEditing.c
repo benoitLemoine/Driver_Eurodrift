@@ -235,7 +235,7 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
  * @param playerPosition The starting position of the player car.
  * @return The path to follow to reach the end.
  */
-TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosition) {
+TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
 
     //TODO Deux queues : queue périodique et queue sûre
     //Arrêt quand case ajoutée = playerPosition
@@ -254,16 +254,18 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosi
     /*Looking for the cheapest arrival tile*/
     minCost = INT_MAX;
     for (i = 0; i < graph->arrivalTileNumber; i++) {
-        if (minCost >= getTileCost(graph, graph->arrivalTiles[i])) {
+        if (minCost >= getTileCost(graph, graph->arrivalTiles[i]) && isArrival(*map, graph->arrivalTiles[i])) {
             minCost = getTileCost(graph, graph->arrivalTiles[i]);
             current = graph->arrivalTiles[i];
         }
     }
 
     /*Computing cheapest path to this arrival tile using Dijkstra algorithm*/
-    while (!isEqualVector2D(current, playerPosition)) {
+    while (!isEqualVector2D(current, car.position)) {
         t.position = current;
         t.cost = getTileCost(graph, current);
+        t.speed.x = 0;
+        t.speed.y = 0;
 
         minCost = INT_MAX;
         for (i = -1; i <= 1; i++) {
@@ -294,7 +296,7 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Vector2D playerPosi
     enqueueTileQueue(path, t);
 
     /*Compute speeds to get from a tile to the next one*/
-    updateSpeedTileQueue(path);
+    updateSpeedTileQueue(path, car.speed);
 
     return path;
 }
@@ -380,6 +382,7 @@ void removeUselessBoosts(MapStructure map, TileQueue *path) {
                         if(copy->tail->value.cost <= path->tail->value.cost) {
                             updateCostTileQueue(map, path);
                         }
+                        freeTileQueue(copy);
                     }
                 }
             }
@@ -387,7 +390,6 @@ void removeUselessBoosts(MapStructure map, TileQueue *path) {
 
         cur = cur->next;
     }
-    freeTileQueue(copy);
 }
 
 void updateCostTileQueue(MapStructure map, TileQueue *queue) {
