@@ -296,7 +296,7 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
     enqueueTileQueue(path, t);
 
     /*Compute speeds to get from a tile to the next one*/
-    updateSpeedTileQueue(path, car.speed);
+    updateSpeedTileQueue(path);
 
     return path;
 }

@@ -204,7 +204,7 @@ void removeDuplicate(TileQueue *queue, Vector2D position) {
 }
 
 //Work only when having a queue built from finish to start
-void updateSpeedTileQueue(TileQueue *queue, Vector2D initialSpeed) {
+void updateSpeedTileQueue(TileQueue *queue) {
 
     TileQueueNode *cur;
 
@@ -214,12 +214,10 @@ void updateSpeedTileQueue(TileQueue *queue, Vector2D initialSpeed) {
         return;
     } else {
         cur = queue->head;
-        cur->value.speed.x = initialSpeed.x;
-        cur->value.speed.y = initialSpeed.y;
 
         while (cur != queue->tail) {
-            cur->value.speed.x = cur->next->value.position.x - cur->value.position.x - cur->value.speed.x;
-            cur->value.speed.y = cur->next->value.position.y - cur->value.position.y - cur->value.speed.y;
+            cur->value.speed.x = cur->next->value.position.x - cur->value.position.x;
+            cur->value.speed.y = cur->next->value.position.y - cur->value.position.y;
             cur = cur->next;
         }
     }
