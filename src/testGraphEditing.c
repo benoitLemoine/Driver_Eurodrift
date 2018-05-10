@@ -314,15 +314,15 @@ MU_TEST(testbestPath) {
     car.fuelAvailable = map.fuelAvailable;
 
     computeOneByOneGraph(&map, graph, car);
-    path = buildBestPath(&map, graph, car);
-    removeUselessBoosts(map, path);
-    displayTileQueue(path);
-    updateCostTileQueue(map, path);
-    displayTileQueue(path);
-    removeUselessBoosts(map, path);
-
     displayGraphCost(graph);
+
+    path = buildBestPath(&map, graph, car);
+    updateSpeedTileQueue(path);
+    updateCostTileQueue(map, path);
+
+    removeUselessBoosts(map, path, car);
     displayTileQueue(path);
+
     freeTileQueue(path);
     freeGraph(graph);
     freeMap(&map);
