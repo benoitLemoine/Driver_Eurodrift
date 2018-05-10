@@ -271,26 +271,26 @@ MU_TEST(assertAllocateMapGraph) {
 
 }
 
-MU_TEST(testDijkstra) {
-
-    Car car;
-    MapGraph *graph;
-    MapStructure map;
-
-    car.position.x = 43;
-    car.position.y = 3;
-
-    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_virage_sable.txt");
-
-    graph = allocateMapGraph(&map);
-
-    computeOneByOneGraph(&map, graph, car);
-
-    displayGraphCost(graph);
-    freeGraph(graph);
-    freeMap(&map);
-
-}
+//MU_TEST(testDijkstra) {
+//
+//    Car car;
+//    MapGraph *graph;
+//    MapStructure map;
+//
+//    car.position.x = 43;
+//    car.position.y = 3;
+//
+//    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/starter_virage_sable.txt");
+//
+//    graph = allocateMapGraph(&map);
+//
+//    computeOneByOneGraph(&map, graph, car);
+//
+//    displayGraphCost(graph);
+//    freeGraph(graph);
+//    freeMap(&map);
+//
+//}
 
 MU_TEST(testbestPath) {
 

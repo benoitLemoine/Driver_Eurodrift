@@ -18,7 +18,7 @@ int main() {
     TileQueue *path;
     Tile t;
 
-    Vector2D tileToReach;
+//    Vector2D tileToReach;
 
     char c;
     int lap = 0;
@@ -79,6 +79,9 @@ int main() {
             computeOneByOneGraph(&map, graph, car);
             path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path, car);
+
+            drawLineOnMap(path, &baseMap);
+            saveMapAsFile(baseMap, "linedMap.txt");
 
             dequeueTileQueue(path, &t);
         }

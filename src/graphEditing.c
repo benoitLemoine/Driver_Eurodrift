@@ -216,7 +216,7 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
                         velocityForNext.y = j - currentSpeed.y;
 
                         if (!isValideVelocity(velocityForNext)) {
-                        //    impossibleVelocity = 1;
+                            //    impossibleVelocity = 1;
                         }
 
                         computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
@@ -515,3 +515,78 @@ int isInGraph(Vector2D testedVector, MapGraph *graph) {
 
     return 1;
 }
+
+
+TileQueue *isLine(TileQueueNode *start) {
+
+    TileQueue *line;
+    TileQueueNode *current = start;
+    Vector2D sensOfTheLine, buffer;
+    int lengthOfTheLine = 1;
+
+    if (start == NULL || start->next == NULL) {
+        return 0;
+    }
+
+    line = initTileQueue();
+    enqueueTileQueue(line, start->value);
+
+    sensOfTheLine.x = current->next->value.position.x - current->value.position.x;
+    sensOfTheLine.y = current->next->value.position.y - current->value.position.y;
+
+    do {
+        current = current->next;
+        enqueueTileQueue(line, current->value);
+        lengthOfTheLine++;
+
+        if (current->next == NULL) {
+            break;
+        }
+
+        buffer.x = current->next->value.position.x - current->value.position.x;
+        buffer.y = current->next->value.position.y - current->value.position.y;
+
+    } while (isEqualVector2D(sensOfTheLine, buffer));
+
+    if (lengthOfTheLine < 5) {
+        freeTileQueue(line);
+        line = NULL;
+    }
+    return line;
+
+}
+
+void drawLineOnMap(TileQueue *path, MapStructure *map) {
+
+    TileQueueNode *cursorDraw;
+    TileQueueNode *current = path->head;
+    TileQueue *line = NULL;
+
+    int i;
+    int length;
+
+    while (current != NULL) {
+
+        line = isLine(current);
+
+        if (line != NULL) {
+            cursorDraw = line->head;
+            length = 0;
+
+            do {
+                length++;
+                writeMapTile(map, cursorDraw->value.position, '*');
+                cursorDraw = cursorDraw->next;
+
+            } while (cursorDraw != line->tail);
+
+            for (i = 0; i < length; i++) {
+                current = current->next;
+            }
+        }
+        else {
+            current = current->next;
+        }
+    }
+}
+
