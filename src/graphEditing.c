@@ -280,7 +280,7 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
                     if (readMapTile(*map, testedNeighbor) == '~') {
                         inSandArrival = 1;
                     }
-                    if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph,testedNeighbor) >= 0) {
+                    if (minCost >= getTileCost(graph, testedNeighbor) && getTileCost(graph, testedNeighbor) >= 0) {
                         if (!inSandArrival || (i == 0 || j == 0)) {
                             minCost = getTileCost(graph, testedNeighbor);
                             current = testedNeighbor;
@@ -343,43 +343,43 @@ void removeUselessBoosts(MapStructure map, TileQueue *path) {
 
                         while (cursorChange != cur->next->next) {
 
-                            if(diffPos.x == 0) {
+                            if (diffPos.x == 0) {
                                 cursorChange->value.position.x = cur->value.position.x;
-                            }
-                            else {
+                            } else {
                                 if (diffPos.x > 0) {
                                     cursorChange->value.position.x = cursorChange->prev->value.position.x + 1;
-                                }
-                                else {
+                                } else {
                                     cursorChange->value.position.x = cursorChange->prev->value.position.x - 1;
                                 }
                             }
 
-                            if(diffPos.y == 0) {
+                            if (diffPos.y == 0) {
                                 cursorChange->value.position.y = cursorChange->prev->value.position.y;
-                            }
-                            else {
+                            } else {
                                 if (diffPos.y > 0) {
                                     cursorChange->value.position.y = cursorChange->prev->value.position.y + 1;
-                                }
-                                else {
+                                } else {
                                     cursorChange->value.position.y = cursorChange->prev->value.position.y - 1;
                                 }
                             }
 
-                            cursorChange->prev->value.speed.x = cursorChange->value.position.x - cursorChange->prev->value.position.x;
-                            cursorChange->prev->value.speed.y = cursorChange->value.position.y - cursorChange->prev->value.position.y;
+                            cursorChange->prev->value.speed.x =
+                                    cursorChange->value.position.x - cursorChange->prev->value.position.x;
+                            cursorChange->prev->value.speed.y =
+                                    cursorChange->value.position.y - cursorChange->prev->value.position.y;
 
                             cursorChange->value.cost = 0;
                             cursorChange = cursorChange->next;
                         }
 
-                        cursorChange->prev->value.speed.x = cursorChange->value.position.x - cursorChange->prev->value.position.x;
-                        cursorChange->prev->value.speed.y = cursorChange->value.position.y - cursorChange->prev->value.position.y;
+                        cursorChange->prev->value.speed.x =
+                                cursorChange->value.position.x - cursorChange->prev->value.position.x;
+                        cursorChange->prev->value.speed.y =
+                                cursorChange->value.position.y - cursorChange->prev->value.position.y;
 
                         copy = copyTileQueue(path);
                         updateCostTileQueue(map, copy);
-                        if(copy->tail->value.cost <= path->tail->value.cost) {
+                        if (copy->tail->value.cost <= path->tail->value.cost) {
                             updateCostTileQueue(map, path);
                         }
                         freeTileQueue(copy);
@@ -391,6 +391,88 @@ void removeUselessBoosts(MapStructure map, TileQueue *path) {
         cur = cur->next;
     }
 }
+
+
+void shortenPath(TileQueue *path, MapStructure *map, Car car) {
+
+    /*DEBUG*/
+    FILE *info = fopen("shortenPathDebug.txt", "w");
+    int numberOfSimplifications = 1;
+    /**/
+
+    TileQueueNode *current;
+    TileQueueNode *testedNextTile;
+
+    Vector2D computedSpeed;
+    Vector2D computedVelocity;
+
+    int resizeableFlag = 1;
+    int headFlag = 1;
+    int crossable, correctVelocity, correctEndOFPath;
+    int inSand;
+
+    current->value.speed = car.speed;
+    current->value.position = car.position;
+    testedNextTile = path->head;
+
+    if (isEmptyTileQueue(path)) {
+        return;
+    }
+    if (path->head == path->tail) {
+        return;
+    }
+
+    /*Continue as long as we can simplify*/
+    while (resizeableFlag) {
+
+        resizeableFlag = 0;
+        headFlag = 1;
+
+        /*Go througth all the path and start again*/
+        while (testedNextTile != NULL) {
+
+            fprintf(info, "Nbr simpl : %d\n", numberOfSimplifications);
+            numberOfSimplifications++;
+
+            computedVelocity.x = testedNextTile->value.position.x - current->value.position.x - current->value.speed.x;
+            computedVelocity.y = testedNextTile->value.position.y - current->value.position.y - current->value.speed.y;
+
+            computedSpeed.x = testedNextTile->value.speed.x + computedVelocity.x;
+            computedSpeed.y = testedNextTile->value.speed.y + computedVelocity.y;
+
+            crossable = isCrossable(*map, current->value.position, testedNextTile->value.position);
+            correctVelocity = isValideVelocity(computedVelocity);
+            correctEndOFPath = verifyEndOFPath(path, testedNextTile, computedSpeed);
+
+            fprintf(info, "C : %d / V : %d / P : %d\n", crossable, correctVelocity, correctEndOFPath);
+
+            /*Multiple conditions to apply changes*/
+            if (crossable && correctVelocity && correctEndOFPath) {
+
+                /*Updating informations*/
+                testedNextTile->value.speed = computedSpeed;
+                inSand = isSand(*map, testedNextTile->value.position);
+                testedNextTile->value.cost = computeCost(computedVelocity, computedSpeed, inSand);
+                /*Linking*/
+                current->next = testedNextTile;
+                testedNextTile->prev = current;
+                /*Change flag value*/
+                resizeableFlag = 1;
+            }
+            /*Head tile is managed beside, because current position isn't in the queue*/
+            if (headFlag) {
+                headFlag = 0;
+                current = path->head;
+                testedNextTile = current->next;
+            } else {
+                current = testedNextTile;
+                testedNextTile = testedNextTile->next;
+            }
+        }
+    }
+    fclose(info);
+}
+
 
 void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
@@ -415,7 +497,8 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
         while (cur != queue->tail) {
             velocityNext.x = cur->value.position.x - cur->prev->value.position.x - speed.x;
             velocityNext.y = cur->value.position.y - cur->prev->value.position.y - speed.y;
-            cur->value.cost = cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
+            cur->value.cost =
+                    cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
             speed.x += velocityNext.x;
             speed.y += velocityNext.y;
             cur = cur->next;
@@ -423,7 +506,8 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
         velocityNext.x = 0;
         velocityNext.y = 0;
-        cur->value.cost = cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
+        cur->value.cost =
+                cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
     }
 
 }
@@ -453,5 +537,44 @@ int isInGraph(Vector2D testedVector, MapGraph *graph) {
         return 0;
     }
 
+    return 1;
+}
+
+int verifyEndOFPath(TileQueue *path, TileQueueNode *position, Vector2D currentSpeed) {
+
+    TileQueueNode *current, *testedPosition;
+    Vector2D computedVelocity;
+
+    /*Problematic cases*/
+    if (isEmptyTileQueue(path)) {
+        return 1;
+    }
+    if (path->head == path->tail) {
+        return 1;
+    }
+
+    current = path->head;
+    while (current != position) {
+        if (current == NULL || current == path->tail) {
+            return 0;
+        }
+        current = current->next;
+    }
+    testedPosition = current->next;
+
+    /*Verifying if next tile is reachable*/
+    while (current != path->tail && testedPosition != NULL) {
+
+        computedVelocity.x = testedPosition->value.position.x - current->value.position.x - currentSpeed.x;
+        computedVelocity.y = testedPosition->value.position.y - current->value.position.y - currentSpeed.y;
+
+        if (!isValideVelocity(computedVelocity)) {
+            return 0;
+        }
+
+        current = current->next;
+        testedPosition = current->next;
+        currentSpeed = current->value.speed;
+    }
     return 1;
 }

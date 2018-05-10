@@ -69,12 +69,10 @@ int main() {
 
         if (lap == 1) {
 
-            writeMapTile(&map, car.position, '#');
-            writeMapTile(&baseMap, car.position, '#');
-
             computeOneByOneGraph(&map, graph, car);
             path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path);
+            shortenPath(path, &map, car);
 
             dequeueTileQueue(path, &t);
         }
@@ -86,12 +84,14 @@ int main() {
             tileToReach.y = car.position.y + t.speed.y;
 
             if(!isCrossable(map, car.position, tileToReach)) {
+
                 resetCost(&map, graph);
                 resetVisited(graph);
 
                 computeOneByOneGraph(&map, graph, car);
                 path = buildBestPath(&map, graph, car);
                 removeUselessBoosts(map, path);
+                shortenPath(path, &map, car);
 
                 dequeueTileQueue(path, &t);
             }
