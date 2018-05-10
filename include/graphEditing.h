@@ -47,6 +47,8 @@ MapGraph *allocateMapGraph(MapStructure *map);
 
 void displayGraphCost(MapGraph *graph);
 
+void displayGraphVisited(MapGraph *graph);
+
 void freeGraph(MapGraph *graph);
 
 

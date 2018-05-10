@@ -121,6 +121,17 @@ void displayGraphCost(MapGraph *graph) {
     }
 }
 
+void displayGraphVisited(MapGraph *graph) {
+    int i, j;
+
+    for (j = 0; j < graph->height; j++) {
+        for (i = 0; i < graph->width; i++) {
+            printf("%d ", graph->nodes[i][j].visited);
+        }
+        printf("\n");
+    }
+}
+
 int isVisited(MapGraph *graph, Vector2D position) {
     return graph->nodes[position.x][position.y].visited;
 }
@@ -205,7 +216,7 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
                         velocityForNext.y = j - currentSpeed.y;
 
                         if (!isValideVelocity(velocityForNext)) {
-                            impossibleVelocity = 1;
+                        //    impossibleVelocity = 1;
                         }
 
                         computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
@@ -344,8 +355,8 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
                         intermediatePosition.y = cursorChange->value.position.y;
                         previousPosition.x = cursorChange->value.position.x;
                         previousPosition.y = cursorChange->value.position.y;
-                        intermediateSpeed.x = cursorChange->prev->value.speed.x;
-                        intermediateSpeed.y = cursorChange->prev->value.speed.y;
+                        intermediateSpeed.x = cursorChange->value.speed.x;
+                        intermediateSpeed.y = cursorChange->value.speed.y;
 
                         //while loop to compute the potential new cost that the boost suppression would generate
                         while (cursorChange != cur->next->next) {
@@ -435,7 +446,6 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
                 }
             }
         }
-
         cur = cur->next;
     }
 }

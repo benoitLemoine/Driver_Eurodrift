@@ -8,6 +8,10 @@
 
 int main() {
 
+    //Check next tile
+    //if next tile impossible, search new path
+    //if no new path, stay on the current position
+
     MapStructure map, baseMap;
     Car car;
     MapGraph *graph;
@@ -80,21 +84,22 @@ int main() {
         }
         else {
 
-            dequeueTileQueue(path, &t);
+            //dequeueTileQueue(path, &t);
 
-            tileToReach.x = car.position.x + t.speed.x;
-            tileToReach.y = car.position.y + t.speed.y;
+            //tileToReach.x = car.position.x + t.speed.x;
+            //tileToReach.y = car.position.y + t.speed.y;
 
-            if(!isCrossable(map, car.position, tileToReach)) {
+            //if(!isCrossable(map, car.position, tileToReach)) {
                 resetCost(&map, graph);
                 resetVisited(graph);
+                freeTileQueue(path);
 
                 computeOneByOneGraph(&map, graph, car);
                 path = buildBestPath(&map, graph, car);
                 removeUselessBoosts(map, path, car);
 
                 dequeueTileQueue(path, &t);
-            }
+            //}
         }
 
         sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
@@ -114,6 +119,7 @@ int main() {
     freeMap(&map);
     freeMap(&baseMap);
     freeGraph(graph);
+    freeTileQueue(path);
 
     return EXIT_SUCCESS;
 }

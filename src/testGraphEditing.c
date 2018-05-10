@@ -329,10 +329,70 @@ MU_TEST(testbestPath) {
 
 }
 
+MU_TEST(assertResetVisited) {
+
+    Car car;
+    MapGraph *graph;
+    MapStructure map;
+
+    car.position.x = 86;
+    car.position.y = 0;
+    car.speed.x = 0;
+    car.speed.y = 0;
+    car.boostCount = 5;
+
+    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/f-Zero_Death_Wind.txt");
+
+    writeMapTile(&map, car.position, '#');
+
+    graph = allocateMapGraph(&map);
+    car.fuelAvailable = map.fuelAvailable;
+
+    computeOneByOneGraph(&map, graph, car);
+    displayGraphVisited(graph);
+
+    resetVisited(graph);
+    displayGraphVisited(graph);
+
+    freeGraph(graph);
+    freeMap(&map);
+}
+
+MU_TEST(assertResetCost) {
+
+    Car car;
+    MapGraph *graph;
+    MapStructure map;
+
+    car.position.x = 86;
+    car.position.y = 0;
+    car.speed.x = 0;
+    car.speed.y = 0;
+    car.boostCount = 5;
+
+    readMapFromFile(&map, "../GrandPrix2018_3.0.3/tracks/f-Zero_Death_Wind.txt");
+
+    writeMapTile(&map, car.position, '#');
+
+    graph = allocateMapGraph(&map);
+    car.fuelAvailable = map.fuelAvailable;
+
+    computeOneByOneGraph(&map, graph, car);
+    displayGraphCost(graph);
+
+    resetCost(&map, graph);
+    displayGraphCost(graph);
+
+    freeGraph(graph);
+    freeMap(&map);
+}
+
 MU_TEST_SUITE(suiteTestMapGraph){
     MU_RUN_TEST(assertAllocateMapGraph);
     //MU_RUN_TEST(testDijkstra);
     MU_RUN_TEST(testbestPath);
+    MU_RUN_TEST(assertResetVisited);
+    MU_RUN_TEST(assertResetCost);
 }
 
 int main() {
