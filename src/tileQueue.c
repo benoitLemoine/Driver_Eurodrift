@@ -242,3 +242,23 @@ void displayTileQueue(TileQueue *queue) {
                cur->value.speed.y, cur->value.cost);
     }
 }
+
+int lengthOfQueue(TileQueue *queue) {
+
+    TileQueueNode *current;
+    int length;
+
+    if (isEmptyTileQueue(queue)) {
+        return  0;
+    }
+
+    current = queue->head;
+    length = 1;
+
+    while (current != queue->tail) {
+        current = current->next;
+        length++;
+    }
+
+    return length;
+}

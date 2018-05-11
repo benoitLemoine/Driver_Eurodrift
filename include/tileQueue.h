@@ -64,4 +64,6 @@ void updateSpeedTileQueue(TileQueue *queue);
 
 void freeTileQueue(TileQueue *queue);
 
+int lengthOfQueue(TileQueue *queue);
+
 #endif //DRIVER_EURODRIFT_TILEQUEUE_H

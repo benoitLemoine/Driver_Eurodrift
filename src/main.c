@@ -13,6 +13,7 @@ int main() {
     //if no new path, stay on the current position
 
     MapStructure map, baseMap;
+    MapStructure shortenMap;
     Car car;
     MapGraph *graph;
     TileQueue *path;
@@ -38,6 +39,7 @@ int main() {
 
     readMapFromStdin(&map);
     baseMap = copyMap(map);
+    shortenMap = copyMap(map);
     graph = allocateMapGraph(&map);
 
     car.fuelAvailable = map.fuelAvailable;
@@ -80,8 +82,9 @@ int main() {
             path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path, car);
 
-            drawLineOnMap(path, &baseMap);
-            saveMapAsFile(baseMap, "linedMap.txt");
+            shortenPath(path, &shortenMap, car);
+            drawPathOnMap(path, &shortenMap);
+            saveMapAsFile(shortenMap, "shortenPath.txt");
 
             dequeueTileQueue(path, &t);
         }

@@ -450,6 +450,130 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
     }
 }
 
+
+void shortenPath(TileQueue *path, MapStructure *map, Car car) {
+
+    /*DEBUG*/
+    FILE *info = fopen("shortenPathLog.txt", "w");
+    int nbrOfLine = 0;
+
+    TileQueueNode *current = path->head;
+    TileQueueNode *endOfLine;
+    TileQueue *line = NULL;
+    int i;
+    int lengthOfLine;
+    int previousCost, newCost;
+
+    /*All along the path*/
+    while (current != NULL) {
+
+        line = isLine(current);
+
+        /*If current is the start of a line*/
+        if (line != NULL) {
+            nbrOfLine++;
+
+            lengthOfLine = lengthOfQueue(line);
+            previousCost = line->tail->value.cost - line->head->value.cost;
+            shortenLine(line, map);
+            newCost = line->tail->value.cost - line->head->value.cost;
+
+            /*Move endOfLine at the position of the line's tail on actual path*/
+            endOfLine = current;
+            for (i = 0; i < lengthOfLine; i++) {
+                endOfLine = endOfLine->next;
+            }
+
+            /*Link if new cost is correct*/
+            if (path->tail->value.cost + newCost - previousCost <= car.fuelAvailable) {
+
+                fprintf(info, "Line %d incorporated\n", nbrOfLine);
+
+                line->head = current;
+                line->tail = endOfLine;
+                updateSpeedTileQueue(path);
+                updateCostTileQueue(*map, path);
+            }
+            /*Skip the rest of the line (dont want to check sub part of a line)*/
+            current = endOfLine;
+
+            drawPathOnMap(path, map);
+        } else {
+            current = current->next;
+        }
+    }
+    fprintf(info, "total of line : %d", nbrOfLine);
+    fclose(info);
+}
+
+
+void shortenLine(TileQueue *line, MapStructure *map) {
+
+    //FIXME Seems to be useless
+    /*DEBUG*/
+    FILE *info;
+    int numberOfJump = 0;
+
+
+    TileQueueNode *cursor;
+    TileQueueNode *cursorFromStart = line->head;
+    TileQueueNode *cursorFromEnd = line->tail;
+    int i;
+    int sizeOfJumpStart = 0;
+    int sizeOfJumpEnd = 1;
+    int doneFlag = 0;
+
+    while (!doneFlag) {
+
+        info = fopen("shortenLine.txt", "w");
+        fprintf(info, "jump : %d\n", numberOfJump);
+        fclose(info);
+
+        /*Jumping from start*/
+        cursor = cursorFromStart;
+        for (i = 0; i < sizeOfJumpStart; i++) {
+
+            cursor = cursor->next;
+        }
+        if (sizeOfJumpStart <= 5) {
+            sizeOfJumpStart++;
+        }
+        /*Linking*/
+        cursorFromStart->next = cursor;
+        cursor->prev = cursorFromStart;
+
+        cursorFromStart = cursor;
+
+        /*Jumping from end*/
+        cursor = cursorFromEnd;
+        for (i = 0; i < sizeOfJumpEnd; i++) {
+
+            cursor = cursor->prev;
+            if (cursor == cursorFromStart) {
+                doneFlag = 1;
+                break;
+            }
+        }
+        if (sizeOfJumpEnd <= 5) {
+            sizeOfJumpEnd++;
+        }
+        /*Linking*/
+        cursorFromEnd->prev = cursor;
+        cursor->next = cursorFromEnd;
+
+        cursorFromEnd = cursor;
+
+        numberOfJump++;
+    }
+    updateSpeedTileQueue(line);
+    updateCostTileQueue(*map, line);
+
+    info = fopen("shortenLine.txt", "w");
+    fprintf(info, "ending shortenLine\n");
+    fclose(info);
+}
+
+
 void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
     TileQueueNode *cur;
@@ -488,6 +612,7 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
 }
 
+
 int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
 
     int fuelConsumed = velocity.x * velocity.x + velocity.y * velocity.y;
@@ -497,6 +622,7 @@ int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
     }
     return fuelConsumed;
 }
+
 
 int isInGraph(Vector2D testedVector, MapGraph *graph) {
 
@@ -531,9 +657,11 @@ TileQueue *isLine(TileQueueNode *start) {
     line = initTileQueue();
     enqueueTileQueue(line, start->value);
 
+    /*Saving direction of the line with first 2 points*/
     sensOfTheLine.x = current->next->value.position.x - current->value.position.x;
     sensOfTheLine.y = current->next->value.position.y - current->value.position.y;
 
+    /*As long as it follows this direction*/
     do {
         current = current->next;
         enqueueTileQueue(line, current->value);
@@ -548,13 +676,14 @@ TileQueue *isLine(TileQueueNode *start) {
 
     } while (isEqualVector2D(sensOfTheLine, buffer));
 
+    /*Keep only lines with length superior or equal to 5*/
     if (lengthOfTheLine < 5) {
         freeTileQueue(line);
         line = NULL;
     }
     return line;
-
 }
+
 
 void drawLineOnMap(TileQueue *path, MapStructure *map) {
 
@@ -583,10 +712,25 @@ void drawLineOnMap(TileQueue *path, MapStructure *map) {
             for (i = 0; i < length; i++) {
                 current = current->next;
             }
-        }
-        else {
+        } else {
             current = current->next;
         }
     }
+}
+
+
+void drawPathOnMap(TileQueue *path, MapStructure *map) {
+
+    TileQueueNode *current = path->head;
+
+    if (isEmptyTileQueue(path)) {
+        return;
+    }
+
+    do {
+        writeMapTile(map, current->value.position, '*');
+        current = current->next;
+
+    } while (current != NULL);
 }
 

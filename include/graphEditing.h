@@ -66,6 +66,11 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car);
 
 void removeUselessBoosts(MapStructure map, TileQueue *path, Car car);
 
+void shortenLine(TileQueue *line, MapStructure *map);
+
+void shortenPath(TileQueue *path, MapStructure *map, Car car);
+
+
 void resetVisited(MapGraph *graph);
 
 void resetCost(MapStructure *map, MapGraph *graph);
@@ -77,5 +82,7 @@ int isInGraph(Vector2D testedVector, MapGraph *graph);
 TileQueue *isLine(TileQueueNode *start);
 
 void drawLineOnMap(TileQueue *path, MapStructure *map);
+
+void drawPathOnMap(TileQueue *path, MapStructure *map);
 
 #endif //DRIVER_EURODRIFT_GRAPHEDITING_H
