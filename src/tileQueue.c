@@ -135,6 +135,26 @@ void enqueueTileQueue(TileQueue *queue, Tile t) {
     }
 }
 
+
+void enqueueTileQueueAtTail(TileQueue *queue, Tile t) {
+
+    TileQueueNode *node;
+
+    node = malloc(sizeof(TileQueueNode));
+    node->value = t;
+    node->prev = NULL;
+    node->next = NULL;
+
+    if (isEmptyTileQueue(queue)) {
+        queue->head = node;
+        queue->tail = node;
+    }else {
+        queue->tail->next = node;
+        node->prev = queue->tail;
+        queue->tail = node;
+    }
+}
+
 int dequeueTileQueue(TileQueue *queue, Tile *t) {
     TileQueueNode *tmp;
 

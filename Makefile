@@ -23,7 +23,7 @@ $(OBJDIR)%.o : $(SRCDIR)%.c
 ## Executables
 
 $(TEST_MAP) : $(OBJDIR)mapEditing.o $(OBJDIR)mapEditingTest.o $(OBJDIR)mathObjects.o
-	gcc $^ -o $(BINDIR)$@
+	gcc $^ -o $(BINDIR)$@ 
 
 $(TEST_GRAPH) : $(OBJDIR)mapEditing.o $(OBJDIR)testGraphEditing.o $(OBJDIR)graphEditing.o $(OBJDIR)tileQueue.o $(OBJDIR)mathObjects.o
 	gcc $^ -o $(BINDIR)$@ -lm

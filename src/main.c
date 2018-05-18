@@ -8,12 +8,14 @@
 
 int main() {
 
+    /*DEBUG*/
+    FILE* info = fopen("mainLog.txt", "w");
+
     //Check next tile
     //if next tile impossible, search new path
     //if no new path, stay on the current position
 
     MapStructure map, baseMap;
-    MapStructure shortenMap;
     Car car;
     MapGraph *graph;
     TileQueue *path;
@@ -33,13 +35,10 @@ int main() {
 
     char action[100];
 
-    FILE* info = fopen("raceLog.txt", "w");
-
     /*Reading of the map*/
 
     readMapFromStdin(&map);
     baseMap = copyMap(map);
-    shortenMap = copyMap(map);
     graph = allocateMapGraph(&map);
 
     car.fuelAvailable = map.fuelAvailable;
@@ -82,29 +81,29 @@ int main() {
             path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path, car);
 
-            shortenPath(path, &shortenMap, car);
-            drawPathOnMap(path, &shortenMap);
-            saveMapAsFile(shortenMap, "shortenPath.txt");
+
+            shortenPath(path, &map, car);
+            drawPathOnMap(path, &map);
+            saveMapAsFile(map, "mapMain.txt");
 
             dequeueTileQueue(path, &t);
-        }
-        else {
+        } else {
 
-            //dequeueTileQueue(path, &t);
+//            dequeueTileQueue(path, &t);
 
-            //tileToReach.x = car.position.x + t.speed.x;
-            //tileToReach.y = car.position.y + t.speed.y;
+//            tileToReach.x = car.position.x + t.speed.x;
+//            tileToReach.y = car.position.y + t.speed.y;
 
-            //if(!isCrossable(map, car.position, tileToReach)) {
-                resetCost(&map, graph);
-                resetVisited(graph);
-                freeTileQueue(path);
+//            if(!isCrossable(map, car.position, tileToReach)) {
+//            resetCost(&map, graph);
+//            resetVisited(graph);
+//            freeTileQueue(path);
+//
+//            computeOneByOneGraph(&map, graph, car);
+//            path = buildBestPath(&map, graph, car);
+//            removeUselessBoosts(map, path, car);
 
-                computeOneByOneGraph(&map, graph, car);
-                path = buildBestPath(&map, graph, car);
-                removeUselessBoosts(map, path, car);
-
-                dequeueTileQueue(path, &t);
+            dequeueTileQueue(path, &t);
             //}
         }
 

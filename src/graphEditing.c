@@ -27,6 +27,8 @@
 #include "../include/mapEditing.h"
 #include "../include/tileQueue.h"
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define DEBUG(x) fprintf(info, x); fflush(info)
 
 /**
  * Initialize a MapGraph given a MapStructure.
@@ -455,122 +457,238 @@ void shortenPath(TileQueue *path, MapStructure *map, Car car) {
 
     /*DEBUG*/
     FILE *info = fopen("shortenPathLog.txt", "w");
-    int nbrOfLine = 0;
+    int nbrLine = 0;
+    MapStructure copiedMap;
 
     TileQueueNode *current = path->head;
     TileQueueNode *endOfLine;
     TileQueue *line = NULL;
     int i;
     int lengthOfLine;
-    int previousCost, newCost;
+
+    fprintf(info, "base cost %d\n", path->tail->value.cost);
+    fflush(info);
 
     /*All along the path*/
     while (current != NULL) {
+        drawPathOnMap(path, &copiedMap);
+        saveMapAsFile(copiedMap, "pathIsShorting.txt");
+        copiedMap = copyMap(*map);
 
         line = isLine(current);
 
         /*If current is the start of a line*/
         if (line != NULL) {
-            nbrOfLine++;
+            fprintf(info, "line %d\n", ++nbrLine);
+            fflush(info);
 
             lengthOfLine = lengthOfQueue(line);
-            previousCost = line->tail->value.cost - line->head->value.cost;
-            shortenLine(line, map);
-            newCost = line->tail->value.cost - line->head->value.cost;
+            line = shortenLine(line, map, car, path->tail->value.cost);
 
             /*Move endOfLine at the position of the line's tail on actual path*/
             endOfLine = current;
-            for (i = 0; i < lengthOfLine; i++) {
+            for (i = 1; i < lengthOfLine; i++) {
                 endOfLine = endOfLine->next;
             }
 
-            /*Link if new cost is correct*/
-            if (path->tail->value.cost + newCost - previousCost <= car.fuelAvailable) {
-
-                fprintf(info, "Line %d incorporated\n", nbrOfLine);
-
-                line->head = current;
-                line->tail = endOfLine;
-                updateSpeedTileQueue(path);
-                updateCostTileQueue(*map, path);
+            /*Linking*/
+            if (current == path->head) {
+                line->head->prev = NULL;
+                path->head = line->head;
+            } else {
+                line->head->prev = current->prev;
+                current->prev->next = line->head;
             }
-            /*Skip the rest of the line (dont want to check sub part of a line)*/
-            current = endOfLine;
 
-            drawPathOnMap(path, map);
+            if (endOfLine == path->tail) {
+                line->tail->next = NULL;
+                path->tail = line->tail;
+            } else {
+                line->tail->next = endOfLine->next;
+                endOfLine->next->prev = line->tail;
+            }
+
+            updateSpeedTileQueue(path);
+            updateCostTileQueue(*map, path);
+
+            fprintf(info, "new cost %d\n", path->tail->value.cost);
+            fflush(info);
+
+            /*Skip the rest of the line (dont want to check sub part of a line)*/
+            current = line->tail;
         } else {
             current = current->next;
         }
     }
-    fprintf(info, "total of line : %d", nbrOfLine);
-    fclose(info);
 }
 
 
-void shortenLine(TileQueue *line, MapStructure *map) {
+TileQueue *shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost) {
 
-    //FIXME Seems to be useless
+    //FIXME Bugs appear when computed cost is too high
+
+    //TODO take remaining fuel in account
+    //TODO take initial speed of the car in account
+    //TODO take sand tile in account
+    //TODO take arrival tile in account
+
     /*DEBUG*/
-    FILE *info;
-    int numberOfJump = 0;
+    FILE *info = fopen("shortenLineLog.txt", "w");
 
+    int lengthOfTheLine = lengthOfQueue(line);
+    int lengthOfSmallerPerfectLine;
 
-    TileQueueNode *cursor;
-    TileQueueNode *cursorFromStart = line->head;
-    TileQueueNode *cursorFromEnd = line->tail;
-    int i;
-    int sizeOfJumpStart = 0;
-    int sizeOfJumpEnd = 1;
-    int doneFlag = 0;
+    int initialSpeed = MAX(car.speed.x, car.speed.y);
+    int maxSpeed;
 
-    while (!doneFlag) {
+    int missingLength;
+    int i, speedLength;
 
-        info = fopen("shortenLine.txt", "w");
-        fprintf(info, "jump : %d\n", numberOfJump);
-        fclose(info);
+    TileQueue *newline = NULL;
+    TileQueueNode *current;
 
-        /*Jumping from start*/
-        cursor = cursorFromStart;
-        for (i = 0; i < sizeOfJumpStart; i++) {
+    int previousCost = line->head->value.cost - line->tail->value.cost;
+    fprintf(info, "Inital speed: %d\n", initialSpeed);
+    fprintf(info, "Base cost: %d\n", baseCost);
+    fprintf(info, "Car fuels: %d\n", car.fuelAvailable);
+    fprintf(info, "Previous cost: %d\n\n", previousCost);
+    fflush(info);
+    int newCostLine, newCostTotal;
+    int numberOfTryToReduce = 0;
 
-            cursor = cursor->next;
-        }
-        if (sizeOfJumpStart <= 5) {
-            sizeOfJumpStart++;
-        }
-        /*Linking*/
-        cursorFromStart->next = cursor;
-        cursor->prev = cursorFromStart;
+    /*Starting with a null speed is the same as with a speed of one*/
+    if (initialSpeed == 0) {
+        initialSpeed = 1;
+    }
 
-        cursorFromStart = cursor;
+    /*Looks for quickest line which respects remaining fuel*/
+    do {
 
-        /*Jumping from end*/
-        cursor = cursorFromEnd;
-        for (i = 0; i < sizeOfJumpEnd; i++) {
-
-            cursor = cursor->prev;
-            if (cursor == cursorFromStart) {
-                doneFlag = 1;
+        /*Computing parameters with the initial speed and the length of the line*/
+        switch (initialSpeed) {
+            case 1:
+                /*Max speed*/
+                if (lengthOfTheLine >= 26) {
+                    maxSpeed = 5 - numberOfTryToReduce;
+                } else if (lengthOfTheLine >= 17) {
+                    maxSpeed = 4 - numberOfTryToReduce;
+                } else if (lengthOfTheLine >= 10) {
+                    maxSpeed = 3 - numberOfTryToReduce;
+                } else if (lengthOfTheLine >= 5) {
+                    maxSpeed = 2 - numberOfTryToReduce;
+                }
+                /*Length*/
+                if (maxSpeed == 5) {
+                    lengthOfSmallerPerfectLine = 26;
+                } else if (maxSpeed == 4) {
+                    lengthOfSmallerPerfectLine = 17;
+                } else if (maxSpeed == 3) {
+                    lengthOfSmallerPerfectLine = 10;
+                } else if (maxSpeed == 2) {
+                    lengthOfSmallerPerfectLine = 5;
+                } else if (maxSpeed == 1) {
+                    return line;
+                }
                 break;
+            case 2:
+                if (lengthOfTheLine >= 23) {
+                    lengthOfSmallerPerfectLine = 23;
+                    maxSpeed = 5;
+                } else if (lengthOfTheLine >= 14) {
+                    lengthOfSmallerPerfectLine = 14;
+                    maxSpeed = 4;
+                } else if (lengthOfTheLine >= 7) {
+                    lengthOfSmallerPerfectLine = 7;
+                    maxSpeed = 3;
+                } else if (lengthOfTheLine >= 2) {
+                    lengthOfSmallerPerfectLine = 2;
+                    maxSpeed = 2;
+                }
+                break;
+            case 3:
+                if (lengthOfTheLine >= 20) {
+                    lengthOfSmallerPerfectLine = 20;
+                    maxSpeed = 5;
+                } else if (lengthOfTheLine >= 11) {
+                    lengthOfSmallerPerfectLine = 11;
+                    maxSpeed = 4;
+                } else if (lengthOfTheLine >= 4) {
+                    lengthOfSmallerPerfectLine = 4;
+                    maxSpeed = 3;
+                }
+                break;
+            case 4:
+                if (lengthOfTheLine >= 16) {
+                    lengthOfSmallerPerfectLine = 16;
+                    maxSpeed = 5;
+                } else if (lengthOfTheLine >= 7) {
+                    lengthOfSmallerPerfectLine = 7;
+                    maxSpeed = 4;
+                }
+                break;
+            case 5:
+                if (lengthOfTheLine >= 11) {
+                    lengthOfSmallerPerfectLine = 11;
+                    maxSpeed = 5;
+                }
+        }
+        missingLength = lengthOfTheLine - lengthOfSmallerPerfectLine;
+
+
+        if (newline != NULL) {
+            freeTileQueue(newline);
+        }
+        newline = initTileQueue();
+
+        /*Here we use current->prev because in fact line->head is the end of the line, but nvm*/
+        /*So using enqueueTileQueueAtTail returns it one more time*/
+
+        /*First half of the line : accelerating*/
+        current = line->tail;
+        enqueueTileQueue(newline, line->tail->value);
+        for (speedLength = initialSpeed; speedLength < maxSpeed; speedLength++) {
+            for (i = 0; i < speedLength; i++) {
+                current = current->prev;
+            }
+            enqueueTileQueueAtTail(newline, current->value);
+        }
+
+        /*Second half of the line : curbing*/
+        for (speedLength = maxSpeed; speedLength > 0; speedLength--) {
+            /*Jump at least once*/
+            for (i = 0; i < speedLength; i++) {
+                current = current->prev;
+            }
+            enqueueTileQueueAtTail(newline, current->value);
+
+            /*Continue to jump as long as the gap is bigger than the speed*/
+            while (missingLength >= speedLength) {
+                for (i = 0; i < speedLength; i++) {
+                    current = current->prev;
+                }
+                enqueueTileQueueAtTail(newline, current->value);
+                missingLength -= speedLength;
             }
         }
-        if (sizeOfJumpEnd <= 5) {
-            sizeOfJumpEnd++;
-        }
-        /*Linking*/
-        cursorFromEnd->prev = cursor;
-        cursor->next = cursorFromEnd;
 
-        cursorFromEnd = cursor;
+        updateSpeedTileQueue(newline);
+        updateCostTileQueue(*map, newline);
 
-        numberOfJump++;
-    }
-    updateSpeedTileQueue(line);
-    updateCostTileQueue(*map, line);
+        newCostLine = newline->tail->value.cost - newline->head->value.cost;
+        newCostTotal = baseCost + newCostLine - previousCost;
 
-    info = fopen("shortenLine.txt", "w");
-    fprintf(info, "ending shortenLine\n");
-    fclose(info);
+        fprintf(info, "Max speed: %d\n", maxSpeed);
+        fprintf(info, "New cost of the line (%d): %d\n", numberOfTryToReduce, newCostLine);
+        fprintf(info, "New cost in total (%d): %d\n", numberOfTryToReduce, newCostTotal);
+        fflush(info);
+
+        numberOfTryToReduce++;
+        if (numberOfTryToReduce > 5) return line;
+
+    } while (newCostTotal > car.fuelAvailable);
+
+    freeTileQueue(line);
+    return newline;
 }
 
 
@@ -598,7 +716,8 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
             velocityNext.x = cur->value.position.x - cur->prev->value.position.x - speed.x;
             velocityNext.y = cur->value.position.y - cur->prev->value.position.y - speed.y;
             cur->value.cost =
-                    cur->prev->value.cost + computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
+                    cur->prev->value.cost +
+                    computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
             speed.x += velocityNext.x;
             speed.y += velocityNext.y;
             cur = cur->next;
