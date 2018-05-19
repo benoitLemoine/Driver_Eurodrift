@@ -320,9 +320,12 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
     //TODO Make it correct path for up to 3 positions further
 
     TileQueueNode *cur;
-    TileQueueNode *cursorChange;
+    TileQueueNode *cursorChange, *cursorChange2;
     Vector2D velocity, nextVelocity, diffPos;
     Vector2D intermediatePosition, previousPosition, intermediateVelocity, intermediateSpeed;
+
+    TileQueue *line;
+    Tile intermediateTile;
 
     int costDifference;
 
@@ -346,104 +349,75 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
 
                     //if a line exists between the two Tiles and it is crossable, the path is corrected to prevents the usage of a boost.
                     if (isCrossable(map, cur->value.position, cur->next->next->value.position)) {
-                        cursorChange = cur;
+                        cursorChange = cur->next;
+
+                        line = initTileQueue();
+                        enqueueTileQueue(line, cur->value);
+                        cursorChange2 = line->head;
 
                         diffPos.x = cur->next->next->value.position.x - cur->value.position.x;
                         diffPos.y = cur->next->next->value.position.y - cur->value.position.y;
 
-                        costDifference = 0;
-
-                        intermediatePosition.x = cursorChange->value.position.x;
-                        intermediatePosition.y = cursorChange->value.position.y;
-                        previousPosition.x = cursorChange->value.position.x;
-                        previousPosition.y = cursorChange->value.position.y;
-                        intermediateSpeed.x = cursorChange->value.speed.x;
-                        intermediateSpeed.y = cursorChange->value.speed.y;
-
                         //while loop to compute the potential new cost that the boost suppression would generate
                         while (cursorChange != cur->next->next) {
 
-                            if (cursorChange != cur) {
-                                if (diffPos.x != 0) {
-                                    if (diffPos.x > 0) {
-                                        intermediatePosition.x = intermediatePosition.x + 1;
-                                    } else {
-                                        intermediatePosition.x = intermediatePosition.x - 1;
-                                    }
+                            if (diffPos.x != 0) {
+                                if (diffPos.x > 0) {
+                                    intermediateTile.position.x = cursorChange2->value.position.x + 1;
                                 } else {
-                                    intermediatePosition.x = cur->value.position.x;
+                                    intermediateTile.position.x = cursorChange2->value.position.x - 1;
                                 }
-                                if (diffPos.y != 0) {
-                                    if (diffPos.y > 0) {
-                                        intermediatePosition.y = intermediatePosition.y + 1;
-                                    } else {
-                                        intermediatePosition.y = intermediatePosition.y - 1;
-                                    }
+                            } else {
+                                intermediateTile.position.x = cursorChange2->value.position.x;
+                            }
+                            if (diffPos.y != 0) {
+                                if (diffPos.y > 0) {
+                                    intermediateTile.position.y = cursorChange2->value.position.y + 1;
                                 } else {
-                                    intermediatePosition.y = cur->value.position.y;
+                                    intermediateTile.position.y = cursorChange2->value.position.y - 1;
                                 }
+                            } else {
+                                intermediateTile.position.y = cursorChange2->value.position.y;
                             }
 
-                            intermediateVelocity.x = intermediatePosition.x - previousPosition.x;
-                            intermediateVelocity.y = intermediatePosition.y - previousPosition.y;
+                            intermediateTile.speed.x = intermediateTile.position.x - cursorChange2->value.position.x;
+                            intermediateTile.speed.y = intermediateTile.position.y - cursorChange2->value.position.y;
 
                             //compute the cost of the current Tile and add it to the cost we already have.
-                            costDifference += computeCost(intermediateVelocity, intermediateSpeed,
-                                                          isSand(map, intermediatePosition));
+                            intermediateTile.cost = 0;
 
-                            intermediateSpeed.x = intermediateVelocity.x;
-                            intermediateSpeed.y = intermediateVelocity.y;
-                            previousPosition.x = intermediatePosition.x;
-                            previousPosition.y = intermediatePosition.y;
+                            enqueueTileQueue(line, intermediateTile);
 
                             cursorChange = cursorChange->next;
+                            cursorChange2 = cursorChange2->next;
                         }
 
-                        intermediateVelocity.x = cursorChange->value.position.x - previousPosition.x;
-                        intermediateVelocity.y = cursorChange->value.position.y - previousPosition.y;
+                        enqueueTileQueue(line, cur->next->next->value);
 
-                        costDifference += computeCost(intermediateVelocity, intermediateSpeed,
-                                                      isSand(map, cursorChange->value.position));
+                        updateSpeedTileQueue(line);
+                        updateCostTileQueue(map, line);
 
                         //if the costDifference calculated is smaller than the old ones, we change the path
                         //if it isn't, but the fuel avaiable allow for skipping the boost, we change the path
-                        if (costDifference <= (cursorChange->value.cost - cur->value.cost)
-                            || (path->tail->value.cost + costDifference) <= car.fuelAvailable) {
-                            cursorChange = cur;
+                        if (line->tail->value.cost <= cur->next->next->value.cost
+                            || (line->tail->value.cost - cur->next->next->value.cost + path->tail->value.cost) <= car.fuelAvailable) {
+                            cursorChange = cur->next;
+                            cursorChange2 = line->head->next;
 
-                            diffPos.x = cur->next->next->value.position.x - cur->value.position.x;
-                            diffPos.y = cur->next->next->value.position.y - cur->value.position.y;
+                            while (cursorChange2 != line->tail) {
 
-                            while (cursorChange != cur->next->next) {
-
-                                if (cursorChange != cur) {
-                                    if (diffPos.x != 0) {
-                                        if (diffPos.x > 0) {
-                                            cursorChange->value.position.x = cursorChange->prev->value.position.x + 1;
-                                        } else {
-                                            cursorChange->value.position.x = cursorChange->prev->value.position.x - 1;
-                                        }
-                                    } else {
-                                        cursorChange->value.position.x = cur->value.position.x;
-                                    }
-                                    if (diffPos.y != 0) {
-                                        if (diffPos.y > 0) {
-                                            cursorChange->value.position.y = cursorChange->prev->value.position.y + 1;
-                                        } else {
-                                            cursorChange->value.position.y = cursorChange->prev->value.position.y - 1;
-                                        }
-                                    } else {
-                                        cursorChange->value.position.y = cur->value.position.y;
-                                    }
-                                }
+                                cursorChange->value.position.x  = cursorChange2->value.position.x;
+                                cursorChange->value.position.y  = cursorChange2->value.position.y;
 
                                 cursorChange = cursorChange->next;
+                                cursorChange2 = cursorChange2->next;
                             }
 
                             //update the speeds and costs after changing the path
                             updateSpeedTileQueue(path);
                             updateCostTileQueue(map, path);
                         }
+                        freeTileQueue(line);
                     }
                 }
             }
