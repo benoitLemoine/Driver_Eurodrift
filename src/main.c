@@ -81,7 +81,6 @@ int main() {
             path = buildBestPath(&map, graph, car);
             removeUselessBoosts(map, path, car);
 
-
             //shortenPath(path, &map, car);
             //drawPathOnMap(path, &map);
             //saveMapAsFile(map, "mapMain.txt");
@@ -94,6 +93,7 @@ int main() {
             tileToReach.x = car.position.x + path->head->value.speed.x;
             tileToReach.y = car.position.y + path->head->value.speed.y;
 
+            //TODO correct path by +1/-1 when unreachable next tile
             if(!isCrossable(map, car.position, tileToReach)) {
                 resetCost(&map, graph);
                 resetVisited(graph);

@@ -250,6 +250,8 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
  */
 TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
 
+    //TODO When the arrival Tile and the car position are not joignable (others car blocking the path)
+
     int i, j;
     int minCost;
     int inSandArrival;
@@ -317,11 +319,9 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
  */
 void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
 
-    //TODO Make it correct path for up to 3 positions further
-
-    TileQueueNode *cur;
+    TileQueueNode *cur, *curStart, *curEnd;
     TileQueueNode *cursorChange, *cursorChange2;
-    Vector2D velocity, nextVelocity, diffPos;
+    Vector2D velocityToNext, nextVelocity, diffPos;
     Vector2D intermediatePosition, previousPosition, intermediateVelocity, intermediateSpeed;
 
     TileQueue *line;
@@ -334,92 +334,100 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
     while (cur != path->tail) {
 
         //if a velocity difference of more than 1/-1 occurs between two Tiles, that means a boost is used.
-        velocity.x = cur->value.speed.x - cur->next->value.speed.x;
-        velocity.y = cur->value.speed.y - cur->next->value.speed.y;
+        velocityToNext.x = cur->value.speed.x - cur->next->value.speed.x;
+        velocityToNext.y = cur->value.speed.y - cur->next->value.speed.y;
 
-        if (velocity.x >= 2 || velocity.x <= -2 || velocity.y >= 2 || velocity.y <= -2) {
+        if (!isValideVelocity(velocityToNext)) {
             if (cur->next->next != NULL) {
 
-                //if the velocity difference doesn't exceed 1/-1 when comparing
-                // the current Tile with the Tile 2 step ahead, that means that the boost used was unecessary.
-                nextVelocity.x = cur->value.speed.x - cur->next->next->value.speed.x;
-                nextVelocity.y = cur->value.speed.y - cur->next->next->value.speed.y;
+                curStart = cur->next;
+                curEnd = cur->next;
 
-                if (isValideVelocity(nextVelocity)) {
+                diffPos.x = curEnd->value.position.x - curStart->value.position.x;
+                diffPos.y = curEnd->value.position.y - curStart->value.position.y;
 
-                    //if a line exists between the two Tiles and it is crossable, the path is corrected to prevents the usage of a boost.
-                    if (isCrossable(map, cur->value.position, cur->next->next->value.position)) {
-                        cursorChange = cur->next;
+                while (curStart->prev != NULL && curEnd->next != NULL && (diffPos.x == 0 || diffPos.y == 0)
+                       && isCrossable(map, curStart->value.position, curEnd->value.position)) {
+                    curStart = curStart->prev;
+                    curEnd = curEnd->next;
+                    diffPos.x = curEnd->value.position.x - curStart->value.position.x;
+                    diffPos.y = curEnd->value.position.y - curStart->value.position.y;
+                }
 
-                        line = initTileQueue();
-                        enqueueTileQueue(line, cur->value);
+                curStart = curStart->next;
+                curEnd = curEnd->prev;
+
+                if (curStart != curEnd) {
+                    cursorChange = curStart;
+
+                    line = initTileQueue();
+                    enqueueTileQueueAtTail(line, curStart->value);
+                    cursorChange2 = line->head;
+
+                    diffPos.x = curEnd->value.position.x - curStart->value.position.x;
+                    diffPos.y = curEnd->value.position.y - curStart->value.position.y;
+
+                    //while loop to compute the potential new cost that the boost suppression would generate
+                    while (cursorChange != curEnd) {
+                        if (diffPos.x != 0) {
+                            if (diffPos.x > 0) {
+                                intermediateTile.position.x = cursorChange2->value.position.x + 1;
+                            } else {
+                                intermediateTile.position.x = cursorChange2->value.position.x - 1;
+                            }
+                        } else {
+                            intermediateTile.position.x = cursorChange2->value.position.x;
+                        }
+                        if (diffPos.y != 0) {
+                            if (diffPos.y > 0) {
+                                intermediateTile.position.y = cursorChange2->value.position.y + 1;
+                            } else {
+                                intermediateTile.position.y = cursorChange2->value.position.y - 1;
+                            }
+                        } else {
+                            intermediateTile.position.y = cursorChange2->value.position.y;
+                        }
+
+                        intermediateTile.speed.x = intermediateTile.position.x - cursorChange2->value.position.x;
+                        intermediateTile.speed.y = intermediateTile.position.y - cursorChange2->value.position.y;
+
+                        //compute the cost of the current Tile and add it to the cost we already have.
+                        intermediateTile.cost = 0;
+
+                        enqueueTileQueueAtTail(line, intermediateTile);
+
+                        cursorChange = cursorChange->next;
+                        cursorChange2 = cursorChange2->next;
+                    }
+
+                    enqueueTileQueueAtTail(line, curEnd->value);
+
+                    updateSpeedTileQueue(line);
+                    updateCostTileQueue(map, line);
+
+                    //if the costDifference calculated is smaller than the old ones, we change the path
+                    //if it isn't, but the fuel avaiable allow for skipping the boost, we change the path
+                    if (line->tail->value.cost <= curEnd->value.cost ||
+                        (line->tail->value.cost - curEnd->value.cost + path->tail->value.cost) <= car.fuelAvailable) {
+                        cursorChange = curStart;
                         cursorChange2 = line->head;
 
-                        diffPos.x = cur->next->next->value.position.x - cur->value.position.x;
-                        diffPos.y = cur->next->next->value.position.y - cur->value.position.y;
+                        while (cursorChange2 != line->tail) {
 
-                        //while loop to compute the potential new cost that the boost suppression would generate
-                        while (cursorChange != cur->next->next) {
-
-                            if (diffPos.x != 0) {
-                                if (diffPos.x > 0) {
-                                    intermediateTile.position.x = cursorChange2->value.position.x + 1;
-                                } else {
-                                    intermediateTile.position.x = cursorChange2->value.position.x - 1;
-                                }
-                            } else {
-                                intermediateTile.position.x = cursorChange2->value.position.x;
-                            }
-                            if (diffPos.y != 0) {
-                                if (diffPos.y > 0) {
-                                    intermediateTile.position.y = cursorChange2->value.position.y + 1;
-                                } else {
-                                    intermediateTile.position.y = cursorChange2->value.position.y - 1;
-                                }
-                            } else {
-                                intermediateTile.position.y = cursorChange2->value.position.y;
-                            }
-
-                            intermediateTile.speed.x = intermediateTile.position.x - cursorChange2->value.position.x;
-                            intermediateTile.speed.y = intermediateTile.position.y - cursorChange2->value.position.y;
-
-                            //compute the cost of the current Tile and add it to the cost we already have.
-                            intermediateTile.cost = 0;
-
-                            enqueueTileQueue(line, intermediateTile);
+                            cursorChange->value.position.x = cursorChange2->value.position.x;
+                            cursorChange->value.position.y = cursorChange2->value.position.y;
 
                             cursorChange = cursorChange->next;
                             cursorChange2 = cursorChange2->next;
                         }
 
-                        enqueueTileQueue(line, cur->next->next->value);
-
-                        updateSpeedTileQueue(line);
-                        updateCostTileQueue(map, line);
-
-                        //if the costDifference calculated is smaller than the old ones, we change the path
-                        //if it isn't, but the fuel avaiable allow for skipping the boost, we change the path
-                        if (line->tail->value.cost <= cur->next->next->value.cost
-                            || (line->tail->value.cost - cur->next->next->value.cost + path->tail->value.cost) <= car.fuelAvailable) {
-                            cursorChange = cur->next;
-                            cursorChange2 = line->head->next;
-
-                            while (cursorChange2 != line->tail) {
-
-                                cursorChange->value.position.x  = cursorChange2->value.position.x;
-                                cursorChange->value.position.y  = cursorChange2->value.position.y;
-
-                                cursorChange = cursorChange->next;
-                                cursorChange2 = cursorChange2->next;
-                            }
-
-                            //update the speeds and costs after changing the path
-                            updateSpeedTileQueue(path);
-                            updateCostTileQueue(map, path);
-                        }
-                        freeTileQueue(line);
+                        //update the speeds and costs after changing the path
+                        updateSpeedTileQueue(path);
+                        updateCostTileQueue(map, path);
                     }
+                    freeTileQueue(line);
                 }
+
             }
         }
         cur = cur->next;
