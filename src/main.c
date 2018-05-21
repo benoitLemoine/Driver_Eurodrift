@@ -114,13 +114,13 @@ int main() {
 
             //change Dijkstra if better one found
 
-            if (pathDijkstraCurrent->tail->value.cost >= pathDijkstraNew->tail->value.cost ||
-                !isArrival(map, pathDijkstraCurrent->tail->value.position)) {
-                freeTileQueue(pathDijkstraCurrent);
-                pathDijkstraCurrent = pathDijkstraNew;
-            } else {
-                freeTileQueue(pathDijkstraNew);
-            }
+            //if (pathDijkstraCurrent->tail->value.cost >= pathDijkstraNew->tail->value.cost ||
+            //  !isArrival(map, pathDijkstraCurrent->tail->value.position)) {
+            freeTileQueue(pathDijkstraCurrent);
+            pathDijkstraCurrent = pathDijkstraNew;
+            //} else {
+            //   freeTileQueue(pathDijkstraNew);
+            //}
 
             resetCost(&map, graph);
             resetVisited(graph);
@@ -137,7 +137,7 @@ int main() {
         //Algorithm selection
 
         //TODO Find the correct if to change algorithm
-        if (car.fuelAvailable <= (map.fuelAvailable/3)) {
+        if (car.fuelAvailable <= (map.fuelAvailable / 3)) {
             switchAlgorithm = 1;
         }
 
@@ -225,12 +225,11 @@ int main() {
                 car.fuelAvailable -= t.cost;
             }
         } else {
-            //TODO Si on coupe la route et pas de mouvements possible
             if (isSand(map, car.position) && !validSandSpeed(car.speed)) {
                 sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
+                car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
                 car.speed.x = 0;
                 car.speed.y = 0;
-                car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
             } else {
                 dequeueTileQueue(pathSpeed, &t);
                 flagChanged = 0;
@@ -247,18 +246,18 @@ int main() {
                             }
                         }
                     }
-                }
-
-                sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
-                if(flagChanged) {
-                    car.speed.x = 0;
-                    car.speed.y = 0;
-                }
-                else {
+                    car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
+                    sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
+                    if (!flagChanged) {
+                        car.speed.x = 0;
+                        car.speed.y = 0;
+                    }
+                } else {
+                    car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
+                    sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
                     car.speed.x = t.speed.x;
                     car.speed.y = t.speed.y;
                 }
-                car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
             }
         }
         /*Reset competitors positions on the map*/
