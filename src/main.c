@@ -137,7 +137,7 @@ int main() {
         //Algorithm selection
 
         //TODO Find the correct if to change algorithm
-        if (lap >= 999) {
+        if (car.fuelAvailable <= (map.fuelAvailable/3)) {
             switchAlgorithm = 1;
         }
 
@@ -147,10 +147,10 @@ int main() {
             if (!isValidVelocity(car.speed)) {
 
                 if (isSand(map, car.position) && !validSandSpeed(car.speed)) {
-                    sprintf(action, "%d %d", 0 - car.speed.x, 0 - car.speed.y);
+                    sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
                     car.speed.x = 0;
                     car.speed.y = 0;
-                    car.fuelAvailable -= t.cost;
+                    car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
                 } else {
                     dequeueTileQueue(pathSpeed, &t);
 
@@ -227,10 +227,10 @@ int main() {
         } else {
             //TODO Si on coupe la route et pas de mouvements possible
             if (isSand(map, car.position) && !validSandSpeed(car.speed)) {
-                sprintf(action, "%d %d", 0 - car.speed.x, 0 - car.speed.y);
+                sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
                 car.speed.x = 0;
                 car.speed.y = 0;
-                car.fuelAvailable -= t.cost;
+                car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
             } else {
                 dequeueTileQueue(pathSpeed, &t);
                 flagChanged = 0;
@@ -258,7 +258,7 @@ int main() {
                     car.speed.x = t.speed.x;
                     car.speed.y = t.speed.y;
                 }
-                car.fuelAvailable -= t.cost;
+                car.fuelAvailable -= computeCost(t.speed, car.speed, isSand(map, car.position));
             }
         }
         /*Reset competitors positions on the map*/
