@@ -74,7 +74,7 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
 
 TileQueue* shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost);
 
-void shortenPath(TileQueue *path, MapStructure *map, Car car);
+void shortenPathInLine(TileQueue *path, MapStructure *map, Car car);
 
 
 void resetVisited(MapGraph *graph);

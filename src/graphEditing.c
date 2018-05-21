@@ -31,7 +31,7 @@
 #define DEBUG(x) fprintf(info, x); fflush(info)
 
 /**
- * Initialize a MapGraph given a MapStructure.
+ * Initializes a MapGraph given a MapStructure.
  * @param map The map to initialize the graph from.
  * @return A pointer to the newly allocated graph.
  */
@@ -81,6 +81,10 @@ MapGraph *allocateMapGraph(MapStructure *map) {
     return graph;
 }
 
+/**
+ * Resets all visited flags from a graph to zero
+ * @param graph The graph representation of the track.
+ */
 void resetVisited(MapGraph *graph) {
 
     int i, j;
@@ -92,6 +96,11 @@ void resetVisited(MapGraph *graph) {
     }
 }
 
+/**
+ * Resets all costs from a graph to MAX_INT
+ * @param map The map structure to read each tile's type
+ * @param graph The graph representation of the track.
+ */
 void resetCost(MapStructure *map, MapGraph *graph) {
 
     int i, j;
@@ -112,6 +121,10 @@ void resetCost(MapStructure *map, MapGraph *graph) {
     }
 }
 
+/**
+ * Prints in console each node's cost. USED FOR DEBUGGING
+ * @param graph The graph representation of the track.
+ */
 void displayGraphCost(MapGraph *graph) {
     int i, j;
 
@@ -123,6 +136,10 @@ void displayGraphCost(MapGraph *graph) {
     }
 }
 
+/**
+ * Prints in console each node's visited flag. USED FOR DEBUGGING
+ * @param graph The graph representation of the track.
+ */
 void displayGraphVisited(MapGraph *graph) {
     int i, j;
 
@@ -134,14 +151,30 @@ void displayGraphVisited(MapGraph *graph) {
     }
 }
 
+/**
+ * Returns visited statue of a given node
+ * @param graph The graph representation of the track.
+ * @param position The position vector of the given node
+ * @return Statue of the visited flag
+ */
 int isVisited(MapGraph *graph, Vector2D position) {
     return graph->nodes[position.x][position.y].visited;
 }
 
+/**
+ * Returns cost (in fuel) of a given node
+ * @param graph The graph representation of the track.
+ * @param position The position vector of the given node
+ * @return The cost to reach the given node
+ */
 int getTileCost(MapGraph *graph, Vector2D position) {
     return graph->nodes[position.x][position.y].cost;
 }
 
+/**
+ * Releases the memory used by the given graph
+ * @param graph The graph representation of the track.
+ */
 void freeGraph(MapGraph *graph) {
 
     int i;
@@ -157,10 +190,10 @@ void freeGraph(MapGraph *graph) {
 }
 
 /**
- * Generate a valued graph given a track and a starting position.
+ * Generates a valued graph given a track and a starting position.
  * @param map The 2-dimensional character array representation of the track.
  * @param graph The graph representation of the track.
- * @param playerPosition The starting position of the player.
+ * @param car The car structure for current state (speed & position) of the car
  */
 void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
 
@@ -238,6 +271,13 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
     freeTileQueue(neighbors);
 }
 
+/**
+ * Computes the cost in number of iteration of every node of the given graph.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param graph The graph representation of the track.
+ * @param path The one by one already computed path.
+ * @param car The car structure for current state of the car.
+ */
 void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path, Car car) {
 
     int i, j;
@@ -304,7 +344,7 @@ void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path,
 }
 
 /**
- * Build the path with the lowest cost using a valued graph.
+ * Builds the path with the lowest cost using a valued graph.
  * @param graph The graph representation of the track.
  * @param playerPosition The starting position of the player car.
  * @return The path to follow to reach the end.
@@ -374,6 +414,15 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
     return path;
 }
 
+/**
+ * Builds the path up to the next cpt iterations to go as far as possible.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param graph The graph representation of the track.
+ * @param position The starting position of the player car.
+ * @param speed The starting speed of the player car.
+ * @param cpt Number of iterations to compute.
+ * @return The path to follow to reach the end.
+ */
 TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vector2D speed, int cpt) {
 
     int i, j;
@@ -477,9 +526,10 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
 }
 
 /**
- * Remove useless boosts used when the car goes in diagonal in a straight line or an open turn.
+ * Removes useless boosts used when the car goes in diagonal in a straight line or an open turn.
  * @param graph Graph representation of the track.
  * @param path The path to correct.
+ * @param car The car structure for current state of the car.
  */
 void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
 
@@ -597,7 +647,13 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
     }
 }
 
-void shortenPath(TileQueue *path, MapStructure *map, Car car) {
+/**
+ * Shortens the given path by accelerating in the straight lines.
+ * @param path The one by one already computed path.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param car The car structure for current state of the car.
+ */
+void shortenPathInLine(TileQueue *path, MapStructure *map, Car car) {
 
     /*DEBUG*/
     FILE *info = fopen("shortenPathLog.txt", "w");
@@ -666,7 +722,14 @@ void shortenPath(TileQueue *path, MapStructure *map, Car car) {
     }
 }
 
-
+/**
+ * Shortens the given lines to stick as close as possible to remaining fuel, by skipping some nodes.
+ * @param line The given line to shorten.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param car The car structure for current state of the car.
+ * @param baseCost The base cost of the whole path.
+ * @return The shorten line's queue.
+ */
 TileQueue *shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost) {
 
     //FIXME Bugs appear when computed cost is too high
@@ -835,7 +898,11 @@ TileQueue *shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost
     return newline;
 }
 
-
+/**
+ * Updates cost values of every node in the given path, accordingly to their distance to each other.
+ * @param map The 2-dimensional character array representation of the track.
+ * @param queue The given path to compute cost values.
+ */
 void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
     TileQueueNode *cur;
@@ -875,7 +942,13 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
 }
 
-
+/**
+ * Computes the cost of a move, giving its velocity, its current speed and if it starts from a sand tile.
+ * @param velocity The given velocity to apply for the move.
+ * @param speed The current speed of the car.
+ * @param inSand The flag to know if it starts from a sand tile.
+ * @return The cost in fuel to do this move.
+ */
 int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
 
     int fuelConsumed = velocity.x * velocity.x + velocity.y * velocity.y;
@@ -886,7 +959,12 @@ int computeCost(Vector2D velocity, Vector2D speed, int inSand) {
     return fuelConsumed;
 }
 
-
+/**
+ * Returns 1 if there is a node with given position in the graph, otherwise 0.
+ * @param testedVector The given position to check.
+ * @param graph Graph representation of the track.
+ * @return The result of the test.
+ */
 int isInGraph(Vector2D testedVector, MapGraph *graph) {
 
     if (testedVector.x >= graph->width) {
@@ -905,6 +983,12 @@ int isInGraph(Vector2D testedVector, MapGraph *graph) {
     return 1;
 }
 
+/**
+ * Checks if there is a line starting at the given position in the path queue, if so returns the queue of every
+ * node of the line, otherwise NULL.
+ * @param start The given node of the path's queue.
+ * @return The queue corresponding to every nodes of the line.
+ */
 TileQueue *isLine(TileQueueNode *start) {
 
     TileQueue *line;
@@ -946,7 +1030,11 @@ TileQueue *isLine(TileQueueNode *start) {
     return line;
 }
 
-
+/**
+ * Draws each line of the path on a given map. USED FOR DEBUGGING.
+ * @param path The given path where the lines are.
+ * @param map The 2-dimensional character array representation of the track.
+ */
 void drawLineOnMap(TileQueue *path, MapStructure *map) {
 
     TileQueueNode *cursorDraw;
@@ -980,7 +1068,11 @@ void drawLineOnMap(TileQueue *path, MapStructure *map) {
     }
 }
 
-
+/**
+ * Draws the whole path on a given map. USED FOR DEBUGGING.
+ * @param path The given path to draw.
+ * @param map The 2-dimensional character array representation of the track.
+ */
 void drawPathOnMap(TileQueue *path, MapStructure *map) {
 
     TileQueueNode *current = path->head;
