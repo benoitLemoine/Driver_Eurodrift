@@ -66,6 +66,12 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car);
 
 void removeUselessBoosts(MapStructure map, TileQueue *path, Car car);
 
+
+
+void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path, Car car);
+
+TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vector2D speed, int cpt);
+
 TileQueue* shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost);
 
 void shortenPath(TileQueue *path, MapStructure *map, Car car);

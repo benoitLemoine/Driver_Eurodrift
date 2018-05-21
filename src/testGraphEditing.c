@@ -300,6 +300,8 @@ MU_TEST(testbestPath) {
 
     TileQueue *path;
 
+    Tile t;
+
     car.position.x = 86;
     car.position.y = 0;
     car.speed.x = 0;
@@ -321,6 +323,19 @@ MU_TEST(testbestPath) {
     updateCostTileQueue(map, path);
 
     removeUselessBoosts(map, path, car);
+
+    resetCost(&map, graph);
+    resetVisited(graph);
+
+    valueGraphDistancePath(&map, graph, path, car);
+
+    freeTileQueue(path);
+
+    path = bestMove(&map, graph, car.position, car.speed, 5);
+    updateSpeedTileQueue(path);
+    freeTileQueue(path);
+
+    displayGraphCost(graph);
     displayTileQueue(path);
 
     freeTileQueue(path);
@@ -391,8 +406,8 @@ MU_TEST_SUITE(suiteTestMapGraph){
     MU_RUN_TEST(assertAllocateMapGraph);
     //MU_RUN_TEST(testDijkstra);
     MU_RUN_TEST(testbestPath);
-    MU_RUN_TEST(assertResetVisited);
-    MU_RUN_TEST(assertResetCost);
+    //MU_RUN_TEST(assertResetVisited);
+    //MU_RUN_TEST(assertResetCost);
 }
 
 int main() {

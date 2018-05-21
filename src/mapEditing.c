@@ -321,7 +321,7 @@ int isCrossable(MapStructure map, Vector2D departure, Vector2D arrival) {
     return 1;
 }
 
-int isValideVelocity(Vector2D velocity) {
+int isValidVelocity(Vector2D velocity) {
 
     if (velocity.x >= 2) {
         return 0;
@@ -337,4 +337,24 @@ int isValideVelocity(Vector2D velocity) {
     }
 
     return 1;
+}
+
+int validSandSpeed(Vector2D velocity) {
+
+    if(velocity.x == 0){
+        if(velocity.y >= -1 && velocity.y <= 1){
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+    if(velocity.y == 0){
+        if(velocity.x >= -1 && velocity.x <= 1){
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
 }
