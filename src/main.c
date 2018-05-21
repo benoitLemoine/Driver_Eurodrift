@@ -25,7 +25,7 @@ int main() {
 
     char c;
     int lap = 0;
-    int cpt;
+    int cpt, flagChanged;
     int switchAlgorithm = 0;
 
     char positions[100];
@@ -137,7 +137,7 @@ int main() {
         //Algorithm selection
 
         //TODO Find the correct if to change algorithm
-        if (lap >= 25) {
+        if (lap >= 999) {
             switchAlgorithm = 1;
         }
 
@@ -233,12 +233,14 @@ int main() {
                 car.fuelAvailable -= t.cost;
             } else {
                 dequeueTileQueue(pathSpeed, &t);
+                flagChanged = 0;
                 if (!isCrossable(map, car.position, t.position)) {
                     for (int i = -1; i < 0; i++) {
                         for (int j = -1; j < 0; j++) {
                             tileToReach.x = t.position.x + i;
                             tileToReach.y = t.position.y + j;
                             if (isCrossable(map, car.position, tileToReach)) {
+                                flagChanged = 1;
                                 t.position = tileToReach;
                                 t.speed.x = t.position.x - car.position.x;
                                 t.speed.y = t.position.y - car.position.y;
@@ -248,8 +250,14 @@ int main() {
                 }
 
                 sprintf(action, "%d %d", t.speed.x - car.speed.x, t.speed.y - car.speed.y);
-                car.speed.x = t.speed.x;
-                car.speed.y = t.speed.y;
+                if(flagChanged) {
+                    car.speed.x = 0;
+                    car.speed.y = 0;
+                }
+                else {
+                    car.speed.x = t.speed.x;
+                    car.speed.y = t.speed.y;
+                }
                 car.fuelAvailable -= t.cost;
             }
         }
