@@ -54,7 +54,7 @@ void freeGraph(MapGraph *graph);
 
 int computeCost(Vector2D velocity, Vector2D speed, int inSand);
 
-void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car);
+int computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car);
 
 
 int isVisited(MapGraph *graph, Vector2D position);
@@ -68,7 +68,7 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car);
 
 
 
-void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path, Car car);
+int valueGraphDistancePath(MapStructure *map, MapGraph *graph, Car car);
 
 TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vector2D speed, int cpt);
 
@@ -81,7 +81,7 @@ void resetVisited(MapGraph *graph);
 
 void resetCost(MapStructure *map, MapGraph *graph);
 
-void updateCostTileQueue(MapStructure map, TileQueue *queue);
+void updateCostTileQueue(MapStructure map, TileQueue *queue, Car car);
 
 int isInGraph(Vector2D testedVector, MapGraph *graph);
 

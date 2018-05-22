@@ -320,23 +320,27 @@ MU_TEST(testbestPath) {
 
     path = buildBestPath(&map, graph, car);
     updateSpeedTileQueue(path);
-    updateCostTileQueue(map, path);
+    updateCostTileQueue(map, path, car);
 
     removeUselessBoosts(map, path, car);
+
+    printf("coup dijkstra %d ", path->tail->value.cost);
 
     resetCost(&map, graph);
     resetVisited(graph);
 
-    valueGraphDistancePath(&map, graph, path, car);
+    valueGraphDistancePath(&map, graph, car);
 
     freeTileQueue(path);
 
     path = bestMove(&map, graph, car.position, car.speed, 5);
     updateSpeedTileQueue(path);
-    freeTileQueue(path);
+    updateCostTileQueue(map, path, car);
 
-    displayGraphCost(graph);
-    displayTileQueue(path);
+    printf("coup vitesse %d\n", path->tail->value.cost);
+
+//    displayGraphCost(graph);
+  //  displayTileQueue(path);
 
     freeTileQueue(path);
     freeGraph(graph);

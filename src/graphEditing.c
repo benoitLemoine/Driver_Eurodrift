@@ -162,7 +162,7 @@ void freeGraph(MapGraph *graph) {
  * @param graph The graph representation of the track.
  * @param playerPosition The starting position of the player.
  */
-void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
+int computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
 
     int i, j;
     Vector2D velocityForNext, currentSpeed;
@@ -170,7 +170,6 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
 
     int inSand;
     int crossable;
-    int impossibleVelocity;
 
     TileQueue *neighbors = initTileQueue();
     Tile t;
@@ -200,8 +199,6 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
 
-                impossibleVelocity = 0;
-
                 testedNeighbor.x = current->position.x + i;
                 testedNeighbor.y = current->position.y + j;
 
@@ -219,14 +216,14 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
 
                         computedCost = current->cost + computeCost(velocityForNext, currentSpeed, inSand);
 
-                        if (computedCost < getTileCost(graph, testedNeighbor) && !impossibleVelocity) {
+                        if (computedCost < getTileCost(graph, testedNeighbor)) {
 
                             graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
 
                             t.position = testedNeighbor;
                             t.cost = getTileCost(graph, testedNeighbor);
-                            t.speed.x = velocityForNext.x + currentSpeed.x;
-                            t.speed.y = velocityForNext.y + currentSpeed.y;
+                            t.speed.x = i;
+                            t.speed.y = j;
                             enqueueByCostTileQueue(neighbors, t);
                             removeDuplicate(neighbors, t.position);
                         }
@@ -236,9 +233,11 @@ void computeOneByOneGraph(MapStructure *map, MapGraph *graph, Car car) {
         }
     }
     freeTileQueue(neighbors);
+
+    return isArrival(*map, t.position);
 }
 
-void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path, Car car) {
+int valueGraphDistancePath(MapStructure *map, MapGraph *graph, Car car) {
 
     int i, j;
     Vector2D velocityForNext, currentSpeed;
@@ -255,15 +254,17 @@ void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path,
 
     velocityForNext.x = 0;
     velocityForNext.y = 0;
-    current = &(graph->nodes[path->tail->value.position.x][path->tail->value.position.y]);
-    current->cost = 0;
 
-    t.cost = 0;
-    t.speed.x = 0;
-    t.speed.y = 0;
-    t.position = path->tail->value.position;
+    for (i = 0; i < graph->arrivalTileNumber; i++) {
+        t.cost = 0;
+        t.speed.x = 0;
+        t.speed.y = 0;
+        t.position = graph->arrivalTiles[i];
+        graph->nodes[t.position.x][t.position.y].cost = 0;
+        graph->nodes[t.position.x][t.position.y].visited = 1;
 
-    enqueueByCostTileQueue(neighbors, t);
+        enqueueByCostTileQueue(neighbors, t);
+    }
 
     while (!isEmptyTileQueue(neighbors)) {
         dequeueTileQueue(neighbors, &t);
@@ -286,6 +287,9 @@ void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path,
                     if (!inSand || (i == 0 || j == 0)) {
 
                         computedCost = t.cost + 1;
+                        if (inSand) {
+                            computedCost += 5;
+                        }
 
                         if (computedCost < graph->nodes[testedNeighbor.x][testedNeighbor.y].cost) {
                             graph->nodes[testedNeighbor.x][testedNeighbor.y].cost = computedCost;
@@ -301,6 +305,8 @@ void valueGraphDistancePath(MapStructure *map, MapGraph *graph, TileQueue *path,
         }
     }
     freeTileQueue(neighbors);
+
+    return getTileCost(graph, car.position) != -1;
 }
 
 /**
@@ -317,6 +323,7 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
     int i, j;
     int minCost;
     int inSandArrival;
+    int impossiblePath = 0;
 
     Vector2D current;
     Vector2D testedNeighbor;
@@ -334,20 +341,28 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
     }
 
     /*Computing cheapest path to this arrival tile using Dijkstra algorithm*/
-    while (!isEqualVector2D(current, car.position)) {
+    while (!isEqualVector2D(current, car.position) && !impossiblePath) {
         t.position = current;
         t.cost = getTileCost(graph, current);
         t.speed.x = 0;
         t.speed.y = 0;
 
         minCost = INT_MAX;
+
+        impossiblePath = 1;
+
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
 
                 testedNeighbor.x = t.position.x + i;
                 testedNeighbor.y = t.position.y + j;
 
+                if(getTileCost(graph, testedNeighbor) <= t.cost){
+                    impossiblePath = 0;
+                }
+
                 inSandArrival = 0;
+
                 if (isInGraph(testedNeighbor, graph)) {
 
                     if (readMapTile(*map, testedNeighbor) == '~') {
@@ -364,13 +379,24 @@ TileQueue *buildBestPath(MapStructure *map, MapGraph *graph, Car car) {
         }
         enqueueTileQueue(path, t);
     }
-    t.position = current;
-    t.cost = getTileCost(graph, current);
-    enqueueTileQueue(path, t);
+    if(!impossiblePath) {
+        t.speed = car.speed;
+        t.position = current;
+        t.cost = getTileCost(graph, current);
+        enqueueTileQueue(path, t);
 
-    /*Compute speeds to get from a tile to the next one*/
-    updateSpeedTileQueue(path);
-
+        /*Compute speeds to get from a tile to the next one*/
+        updateSpeedTileQueue(path);
+    }
+    else {
+        freeTileQueue(path);
+        path = initTileQueue();
+        t.speed.x = -1;
+        t.speed.y = -1;
+        t.position = current;
+        t.cost = -1;
+        enqueueTileQueue(path, t);
+    }
     return path;
 }
 
@@ -393,8 +419,8 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
     }
     if (cpt == 0) {
         t.position = position;
-        t.speed.x = speed.x;
-        t.speed.y = speed.y;
+        t.speed.x = 0;
+        t.speed.y = 0;
         t.cost = INT_MAX;
         minCost = INT_MAX;
         correctPath = initTileQueue();
@@ -408,7 +434,7 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
                     testedNeighbor.y = position.y + speed.y + j;
                 }
                 if (((speed.x + i) < 6 && (speed.x + i) > -6 && (speed.y + j) < 6 && (speed.y + j) > -6) || inSand) {
-                    if(((speed.x + i)*(speed.x + i) + (speed.y + j)*(speed.y + j)) <= 25){
+                    if (((speed.x + i) * (speed.x + i) + (speed.y + j) * (speed.y + j)) <= 25) {
                         if (isInGraph(testedNeighbor, graph) && isCrossable(*map, position, testedNeighbor)) {
                             if (minCost >= getTileCost(graph, testedNeighbor) &&
                                 getTileCost(graph, testedNeighbor) >= 0) {
@@ -430,10 +456,10 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
         correctPath = initTileQueue();
 
         minCost = INT_MAX;
-        t.speed.x = speed.x;
-        t.speed.y = speed.y;
-        t.cost = INT_MAX;
         t.position = position;
+        t.speed.x = 0;
+        t.speed.y = 0;
+        t.cost = INT_MAX;
 
         for (i = -1; i <= 1; i++) {
             for (j = -1; j <= 1; j++) {
@@ -449,19 +475,21 @@ TileQueue *bestMove(MapStructure *map, MapGraph *graph, Vector2D position, Vecto
                     testedSpeed.y = testedNeighbor.y - position.y;
                 }
                 if (((speed.x + i) < 6 && (speed.x + i) > -6 && (speed.y + j) < 6 && (speed.y + j) > -6) || inSand) {
-                    if(((speed.x + i)*(speed.x + i) + (speed.y + j)*(speed.y + j)) <= 25) {
+                    if (((speed.x + i) * (speed.x + i) + (speed.y + j) * (speed.y + j)) <= 25) {
                         if (isInGraph(testedNeighbor, graph) && isCrossable(*map, position, testedNeighbor)) {
                             if (!inSand || (i == 0 || j == 0)) {
-                                t2 = bestMove(map, graph, testedNeighbor, testedSpeed, cpt - 1);
-                                if (minCost >= t2->tail->value.cost) {
-                                    freeTileQueue(correctPath);
-                                    correctPath = copyTileQueue(t2);
-                                    t.cost = getTileCost(graph, testedNeighbor);
-                                    minCost = correctPath->tail->value.cost;
-                                    t.speed.x = testedNeighbor.x - position.x;
-                                    t.speed.y = testedNeighbor.y - position.y;
+                                if ((speed.x + i != 0 || speed.y + j != 0)) {
+                                    t2 = bestMove(map, graph, testedNeighbor, testedSpeed, cpt - 1);
+                                    if (minCost >= t2->tail->value.cost) {
+                                        freeTileQueue(correctPath);
+                                        correctPath = copyTileQueue(t2);
+                                        minCost = correctPath->tail->value.cost;
+                                        t.cost = getTileCost(graph, position);
+                                        t.speed.x = testedNeighbor.x - position.x;
+                                        t.speed.y = testedNeighbor.y - position.y;
+                                    }
+                                    freeTileQueue(t2);
                                 }
-                                freeTileQueue(t2);
                             }
                         }
                     }
@@ -566,7 +594,7 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
                     enqueueTileQueueAtTail(line, curEnd->value);
 
                     updateSpeedTileQueue(line);
-                    updateCostTileQueue(map, line);
+                    updateCostTileQueue(map, line, car);
 
                     //if the costDifference calculated is smaller than the old ones, we change the path
                     //if it isn't, but the fuel avaiable allow for skipping the boost, we change the path
@@ -586,7 +614,7 @@ void removeUselessBoosts(MapStructure map, TileQueue *path, Car car) {
 
                         //update the speeds and costs after changing the path
                         updateSpeedTileQueue(path);
-                        updateCostTileQueue(map, path);
+                        updateCostTileQueue(map, path, car);
                     }
                     freeTileQueue(line);
                 }
@@ -653,7 +681,7 @@ void shortenPath(TileQueue *path, MapStructure *map, Car car) {
             }
 
             updateSpeedTileQueue(path);
-            updateCostTileQueue(*map, path);
+            updateCostTileQueue(*map, path, car);
 
             fprintf(info, "new cost %d\n", path->tail->value.cost);
             fflush(info);
@@ -816,7 +844,7 @@ TileQueue *shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost
         }
 
         updateSpeedTileQueue(newline);
-        updateCostTileQueue(*map, newline);
+        updateCostTileQueue(*map, newline, car);
 
         newCostLine = newline->tail->value.cost - newline->head->value.cost;
         newCostTotal = baseCost + newCostLine - previousCost;
@@ -836,7 +864,7 @@ TileQueue *shortenLine(TileQueue *line, MapStructure *map, Car car, int baseCost
 }
 
 
-void updateCostTileQueue(MapStructure map, TileQueue *queue) {
+void updateCostTileQueue(MapStructure map, TileQueue *queue, Car car) {
 
     TileQueueNode *cur;
     Vector2D speed;
@@ -850,15 +878,15 @@ void updateCostTileQueue(MapStructure map, TileQueue *queue) {
 
         cur = queue->head;
 
-        speed.x = 0;
-        speed.y = 0;
+        speed.x = car.speed.x;
+        speed.y = car.speed.y;
         cur->value.cost = 0;
 
         cur = cur->next;
 
         while (cur != queue->tail) {
-            velocityNext.x = cur->value.position.x - cur->prev->value.position.x - speed.x;
-            velocityNext.y = cur->value.position.y - cur->prev->value.position.y - speed.y;
+            velocityNext.x = cur->value.speed.x - speed.x;
+            velocityNext.y = cur->value.speed.y - speed.y;
             cur->value.cost =
                     cur->prev->value.cost +
                     computeCost(velocityNext, speed, isSand(map, cur->prev->value.position));
